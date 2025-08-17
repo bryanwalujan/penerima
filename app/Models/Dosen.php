@@ -2,7 +2,6 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 
 class Dosen extends Authenticatable
@@ -10,10 +9,6 @@ class Dosen extends Authenticatable
     protected $fillable = ['nidn', 'nip', 'nuptk', 'nama', 'email', 'foto'];
 
     // Mutator untuk mengenkripsi data sensitif sebelum disimpan
-    public function setNidnAttribute($value)
-    {
-        $this->attributes['nidn'] = $value ? Crypt::encryptString($value) : null;
-    }
 
     public function setNipAttribute($value)
     {
@@ -30,35 +25,42 @@ class Dosen extends Authenticatable
         $this->attributes['nama'] = $value ? Crypt::encryptString($value) : null;
     }
 
-    public function setEmailAttribute($value)
-    {
-        $this->attributes['email'] = $value ? Crypt::encryptString($value) : null;
-    }
-
     // Accessor untuk mendekripsi data saat diambil
-    public function getNidnAttribute($value)
-    {
-        return $value ? Crypt::decryptString($value) : null;
-    }
 
     public function getNipAttribute($value)
     {
-        return $value ? Crypt::decryptString($value) : null;
+        if (!$value) {
+            return null;
+        }
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            return $value;
+        }
     }
 
     public function getNuptkAttribute($value)
     {
-        return $value ? Crypt::decryptString($value) : null;
+        if (!$value) {
+            return null;
+        }
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            return $value;
+        }
     }
 
     public function getNamaAttribute($value)
     {
-        return $value ? Crypt::decryptString($value) : null;
-    }
-
-    public function getEmailAttribute($value)
-    {
-        return $value ? Crypt::decryptString($value) : null;
+        if (!$value) {
+            return null;
+        }
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            return $value;
+        }
     }
 
     public function penelitians()

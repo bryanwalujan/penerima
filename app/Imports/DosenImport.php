@@ -32,17 +32,8 @@ class PenelitianSheetImport implements ToModel, WithHeadingRow
             return null; // Lewati jika baris tidak valid
         }
 
-        // Gunakan NIDN dari Excel jika ada, jika tidak buat NIDN unik
-        $nidn = isset($row['nidn']) && !empty($row['nidn']) ? $row['nidn'] : 'NIDN-' . uniqid();
-        
-        $dosen = Dosen::firstOrCreate(
-            ['nidn' => $nidn],
-            [
-                'nama' => $row['nama'],
-                'nip' => $row['nip'] ?? null,
-                'nuptk' => $row['nuptk'] ?? null,
-            ]
-        );
+        // Cari dosen berdasarkan kombinasi nama dan NIDN untuk menghindari duplikasi
+        $dosen = $this->findOrCreateDosen($row);
 
         return new Penelitian([
             'dosen_id' => $dosen->id,
@@ -55,6 +46,46 @@ class PenelitianSheetImport implements ToModel, WithHeadingRow
             'link_luaran' => $row['link_luaran'] ?? null,
         ]);
     }
+
+    private function findOrCreateDosen($row)
+    {
+        $nama = trim($row['nama']);
+        $nidn = isset($row['nidn']) && !empty(trim($row['nidn'])) ? trim($row['nidn']) : null;
+        
+        // Jika NIDN tersedia, cari berdasarkan NIDN terlebih dahulu
+        if ($nidn) {
+            $dosen = Dosen::where('nidn', $nidn)->first();
+            
+            // Jika dosen ditemukan dengan NIDN yang sama, update nama jika berbeda
+            if ($dosen) {
+                if ($dosen->nama !== $nama) {
+                    $dosen->update(['nama' => $nama]);
+                }
+                return $dosen;
+            }
+        }
+        
+        // Jika tidak ditemukan berdasarkan NIDN, cari berdasarkan nama
+        $dosenByName = Dosen::where('nama', $nama)->first();
+        
+        if ($dosenByName) {
+            // Jika NIDN kosong pada dosen yang ada, update dengan NIDN baru
+            if (!$dosenByName->nidn && $nidn) {
+                $dosenByName->update(['nidn' => $nidn]);
+            }
+            return $dosenByName;
+        }
+        
+        // Jika tidak ditemukan sama sekali, buat dosen baru
+        $newNidn = $nidn ?: 'NIDN-' . time() . '-' . rand(1000, 9999);
+        
+        return Dosen::create([
+            'nama' => $nama,
+            'nidn' => $newNidn,
+            'nip' => isset($row['nip']) ? trim($row['nip']) : null,
+            'nuptk' => isset($row['nuptk']) ? trim($row['nuptk']) : null,
+        ]);
+    }
 }
 
 class PengabdianSheetImport implements ToModel, WithHeadingRow
@@ -65,16 +96,7 @@ class PengabdianSheetImport implements ToModel, WithHeadingRow
             return null;
         }
 
-        $nidn = isset($row['nidn']) && !empty($row['nidn']) ? $row['nidn'] : 'NIDN-' . uniqid();
-        
-        $dosen = Dosen::firstOrCreate(
-            ['nidn' => $nidn],
-            [
-                'nama' => $row['nama'],
-                'nip' => $row['nip'] ?? null,
-                'nuptk' => $row['nuptk'] ?? null,
-            ]
-        );
+        $dosen = $this->findOrCreateDosen($row);
 
         return new Pengabdian([
             'dosen_id' => $dosen->id,
@@ -87,6 +109,46 @@ class PengabdianSheetImport implements ToModel, WithHeadingRow
             'link_luaran' => $row['link_luaran'] ?? null,
         ]);
     }
+
+    private function findOrCreateDosen($row)
+    {
+        $nama = trim($row['nama']);
+        $nidn = isset($row['nidn']) && !empty(trim($row['nidn'])) ? trim($row['nidn']) : null;
+        
+        // Jika NIDN tersedia, cari berdasarkan NIDN terlebih dahulu
+        if ($nidn) {
+            $dosen = Dosen::where('nidn', $nidn)->first();
+            
+            // Jika dosen ditemukan dengan NIDN yang sama, update nama jika berbeda
+            if ($dosen) {
+                if ($dosen->nama !== $nama) {
+                    $dosen->update(['nama' => $nama]);
+                }
+                return $dosen;
+            }
+        }
+        
+        // Jika tidak ditemukan berdasarkan NIDN, cari berdasarkan nama
+        $dosenByName = Dosen::where('nama', $nama)->first();
+        
+        if ($dosenByName) {
+            // Jika NIDN kosong pada dosen yang ada, update dengan NIDN baru
+            if (!$dosenByName->nidn && $nidn) {
+                $dosenByName->update(['nidn' => $nidn]);
+            }
+            return $dosenByName;
+        }
+        
+        // Jika tidak ditemukan sama sekali, buat dosen baru
+        $newNidn = $nidn ?: 'NIDN-' . time() . '-' . rand(1000, 9999);
+        
+        return Dosen::create([
+            'nama' => $nama,
+            'nidn' => $newNidn,
+            'nip' => isset($row['nip']) ? trim($row['nip']) : null,
+            'nuptk' => isset($row['nuptk']) ? trim($row['nuptk']) : null,
+        ]);
+    }
 }
 
 class HakiSheetImport implements ToModel, WithHeadingRow
@@ -97,16 +159,7 @@ class HakiSheetImport implements ToModel, WithHeadingRow
             return null;
         }
 
-        $nidn = isset($row['nidn']) && !empty($row['nidn']) ? $row['nidn'] : 'NIDN-' . uniqid();
-        
-        $dosen = Dosen::firstOrCreate(
-            ['nidn' => $nidn],
-            [
-                'nama' => $row['nama'],
-                'nip' => $row['nip'] ?? null,
-                'nuptk' => $row['nuptk'] ?? null,
-            ]
-        );
+        $dosen = $this->findOrCreateDosen($row);
 
         $expired = null;
         if (!empty($row['expired'])) {
@@ -124,6 +177,46 @@ class HakiSheetImport implements ToModel, WithHeadingRow
             'link' => $row['link'] ?? null,
         ]);
     }
+
+    private function findOrCreateDosen($row)
+    {
+        $nama = trim($row['nama']);
+        $nidn = isset($row['nidn']) && !empty(trim($row['nidn'])) ? trim($row['nidn']) : null;
+        
+        // Jika NIDN tersedia, cari berdasarkan NIDN terlebih dahulu
+        if ($nidn) {
+            $dosen = Dosen::where('nidn', $nidn)->first();
+            
+            // Jika dosen ditemukan dengan NIDN yang sama, update nama jika berbeda
+            if ($dosen) {
+                if ($dosen->nama !== $nama) {
+                    $dosen->update(['nama' => $nama]);
+                }
+                return $dosen;
+            }
+        }
+        
+        // Jika tidak ditemukan berdasarkan NIDN, cari berdasarkan nama
+        $dosenByName = Dosen::where('nama', $nama)->first();
+        
+        if ($dosenByName) {
+            // Jika NIDN kosong pada dosen yang ada, update dengan NIDN baru
+            if (!$dosenByName->nidn && $nidn) {
+                $dosenByName->update(['nidn' => $nidn]);
+            }
+            return $dosenByName;
+        }
+        
+        // Jika tidak ditemukan sama sekali, buat dosen baru
+        $newNidn = $nidn ?: 'NIDN-' . time() . '-' . rand(1000, 9999);
+        
+        return Dosen::create([
+            'nama' => $nama,
+            'nidn' => $newNidn,
+            'nip' => isset($row['nip']) ? trim($row['nip']) : null,
+            'nuptk' => isset($row['nuptk']) ? trim($row['nuptk']) : null,
+        ]);
+    }
 }
 
 class PatenSheetImport implements ToModel, WithHeadingRow
@@ -134,16 +227,7 @@ class PatenSheetImport implements ToModel, WithHeadingRow
             return null;
         }
 
-        $nidn = isset($row['nidn']) && !empty($row['nidn']) ? $row['nidn'] : 'NIDN-' . uniqid();
-        
-        $dosen = Dosen::firstOrCreate(
-            ['nidn' => $nidn],
-            [
-                'nama' => $row['nama'],
-                'nip' => $row['nip'] ?? null,
-                'nuptk' => $row['nuptk'] ?? null,
-            ]
-        );
+        $dosen = $this->findOrCreateDosen($row);
 
         $expired = null;
         if (!empty($row['expired'])) {
@@ -160,6 +244,46 @@ class PatenSheetImport implements ToModel, WithHeadingRow
             'jenis_paten' => $row['jenis_paten'],
             'expired' => $expired,
             'link' => $row['link'] ?? null,
+        ]);
+    }
+
+    private function findOrCreateDosen($row)
+    {
+        $nama = trim($row['nama']);
+        $nidn = isset($row['nidn']) && !empty(trim($row['nidn'])) ? trim($row['nidn']) : null;
+        
+        // Jika NIDN tersedia, cari berdasarkan NIDN terlebih dahulu
+        if ($nidn) {
+            $dosen = Dosen::where('nidn', $nidn)->first();
+            
+            // Jika dosen ditemukan dengan NIDN yang sama, update nama jika berbeda
+            if ($dosen) {
+                if ($dosen->nama !== $nama) {
+                    $dosen->update(['nama' => $nama]);
+                }
+                return $dosen;
+            }
+        }
+        
+        // Jika tidak ditemukan berdasarkan NIDN, cari berdasarkan nama
+        $dosenByName = Dosen::where('nama', $nama)->first();
+        
+        if ($dosenByName) {
+            // Jika NIDN kosong pada dosen yang ada, update dengan NIDN baru
+            if (!$dosenByName->nidn && $nidn) {
+                $dosenByName->update(['nidn' => $nidn]);
+            }
+            return $dosenByName;
+        }
+        
+        // Jika tidak ditemukan sama sekali, buat dosen baru
+        $newNidn = $nidn ?: 'NIDN-' . time() . '-' . rand(1000, 9999);
+        
+        return Dosen::create([
+            'nama' => $nama,
+            'nidn' => $newNidn,
+            'nip' => isset($row['nip']) ? trim($row['nip']) : null,
+            'nuptk' => isset($row['nuptk']) ? trim($row['nuptk']) : null,
         ]);
     }
 }

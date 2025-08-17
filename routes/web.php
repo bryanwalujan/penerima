@@ -35,9 +35,14 @@ Route::prefix('admin')->group(function () {
     Route::put('/dosen/{id}', [DosenController::class, 'update'])->name('admin.dosen.update');
     Route::delete('/dosen/{id}', [DosenController::class, 'destroy'])->name('admin.dosen.destroy');
     Route::post('/dosen/import', [DosenController::class, 'import'])->name('admin.dosen.import');
+    Route::get('/dosen/export', [DosenController::class, 'export'])->name('admin.dosen.export');
+    Route::get('/dosen/export-template', [DosenController::class, 'exportTemplate'])->name('admin.dosen.exportTemplate');
     Route::get('/dosen/{id}', [DosenController::class, 'show'])->name('admin.dosen.show');
     Route::get('/dosen/{id}/recommend', [DosenController::class, 'recommend'])->name('admin.dosen.recommend');
     Route::delete('/penelitian/{id}', [DosenController::class, 'destroyPenelitian'])->name('admin.penelitian.destroy');
+    Route::delete('/pengabdian/{id}', [DosenController::class, 'destroyPengabdian'])->name('admin.pengabdian.destroy');
+    Route::delete('/haki/{id}', [DosenController::class, 'destroyHaki'])->name('admin.haki.destroy');
+    Route::delete('/paten/{id}', [DosenController::class, 'destroyPaten'])->name('admin.paten.destroy');
 
     // Rute untuk Dashboard Analytics
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
@@ -58,4 +63,4 @@ Route::middleware(['auth:dosen'])->group(function () {
     Route::put('/dosen/haki/update', [DosenController::class, 'updateHaki'])->name('dosen.haki.update');
     Route::get('/dosen/paten/edit', [DosenController::class, 'editPaten'])->name('dosen.paten.edit');
     Route::put('/dosen/paten/update', [DosenController::class, 'updatePaten'])->name('dosen.paten.update');
-});
+});     
