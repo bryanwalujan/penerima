@@ -105,7 +105,7 @@
             <!-- Distribusi Skema Penelitian -->
             <div class="chart-container">
                 <h3 class="text-lg font-semibold mb-4 flex items-center">
-                    <i class="fas fa-pie-chart text-green-500 mr-2"></i>
+                    <i class="fas fa-chart-pie text-green-500 mr-2"></i>
                     Distribusi Skema Penelitian
                 </h3>
                 <canvas id="skemaPenelitianChart"></canvas>
@@ -132,7 +132,7 @@
             <!-- Distribusi Skema Pengabdian -->
             <div class="chart-container">
                 <h3 class="text-lg font-semibold mb-4 flex items-center">
-                    <i class="fas fa-pie-chart text-green-500 mr-2"></i>
+                    <i class="fas fa-chart-pie text-green-500 mr-2"></i>
                     Distribusi Skema Pengabdian
                 </h3>
                 <canvas id="skemaPengabdianChart"></canvas>
@@ -159,7 +159,7 @@
             <!-- Distribusi Status HAKI -->
             <div class="chart-container">
                 <h3 class="text-lg font-semibold mb-4 flex items-center">
-                    <i class="fas fa-pie-chart text-green-500 mr-2"></i>
+                    <i class="fas fa-chart-pie text-green-500 mr-2"></i>
                     Distribusi Status HAKI
                 </h3>
                 <canvas id="statusHakiChart"></canvas>
@@ -186,7 +186,7 @@
             <!-- Distribusi Jenis Paten -->
             <div class="chart-container">
                 <h3 class="text-lg font-semibold mb-4 flex items-center">
-                    <i class="fas fa-pie-chart text-green-500 mr-2"></i>
+                    <i class="fas fa-chart-pie text-green-500 mr-2"></i>
                     Distribusi Jenis Paten
                 </h3>
                 <canvas id="jenisPatenChart"></canvas>
@@ -205,9 +205,7 @@
 @endsection
 
 @section('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
-    @vite(['resources/views/js/analytics.js'])
-
+    <script src="{{ asset('js/analytics.js') }}"></script>
     <script>
         // Pass PHP data to JavaScript
         window.analyticsData = {

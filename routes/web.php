@@ -5,6 +5,66 @@ use App\Http\Controllers\PublicController;
 use App\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+use Illuminate\Support\Facades\File;
+
+// ==================== API RECEIVE FROM PRESMA ====================
+// API RECEIVE UPLOAD - Simpan ke Storage
+Route::post('/api/receive-upload', function (Request $request) {
+    $request->validate([
+        'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+    ]);
+
+    $file = $request->file('file');
+    $filename = time() . '_' . $file->getClientOriginalName();
+
+    // Simpan ke storage/app/uploads-from-presma
+    $path = $file->storeAs('uploads-from-presma', $filename);
+
+    return response()->json([
+        'success'  => true,
+        'filename' => $filename,
+        'url'      => route('download.from.presma', $filename)
+    ]);
+});
+
+// ==================== HALAMAN DAFTAR FILE ====================
+Route::get('/uploads-from-presma', function () {
+    $directory = storage_path('app/uploads-from-presma');
+
+    if (!file_exists($directory)) {
+        mkdir($directory, 0775, true);
+    }
+
+    $files = collect(\Illuminate\Support\Facades\File::files($directory))
+        ->map(function ($file) {
+            $filename = $file->getFilename();
+            return [
+                'name'     => $filename,
+                'size'     => round($file->getSize() / 1024, 2) . ' KB',
+                'modified' => date('d M Y H:i', $file->getMTime()),
+                'url'      => route('download.from.presma', $filename)
+            ];
+        })
+        ->sortByDesc('modified');
+
+    return view('uploads-from-presma', compact('files'));
+});
+
+// Download File dari Storage
+Route::get('/download/presma/{filename}', function ($filename) {
+    $filePath = storage_path('app/uploads-from-presma/' . $filename);
+
+    if (!file_exists($filePath)) {
+        abort(404, 'File tidak ditemukan');
+    }
+
+    return response()->download($filePath);
+})->name('download.from.presma');
+
+
 // Rute Publik
 Route::get('/', [PublicController::class, 'index'])->name('public.index');
 Route::post('/search', [PublicController::class, 'search'])->name('public.search');

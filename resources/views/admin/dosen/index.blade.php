@@ -33,5 +33,5 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/views/js/dosen.js'])
+    <script src="{{ asset('js/dosen.js') }}"></script>
 @endsection

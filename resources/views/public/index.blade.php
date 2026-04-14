@@ -699,11 +699,11 @@ body {
                                 <a href="{{ route('public.category', ['category' => 'hakis']) }}"
                                     class="stat-badge clickable">
                                     <i class="fas fa-copyright mr-2"></i> {{ isset($totalHakis) ? $totalHakis : 0 }}
-                                    HAKI
+                                    HKI Penelitian
                                 </a>
                                 <a href="{{ route('public.category', ['category' => 'patens']) }}"
                                     class="stat-badge clickable">
-                                    <i class="fas fa-book mr-2"></i> {{ isset($totalPatens) ? $totalPatens : 0 }} Paten
+                                    <i class="fas fa-book mr-2"></i> {{ isset($totalPatens) ? $totalPatens : 0 }} HKI Pengabdian
                                 </a>
                             </div>
                         </div>
