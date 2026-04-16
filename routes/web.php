@@ -15,6 +15,25 @@ use App\Models\Dosen;
 
 use App\Http\Controllers\SkPembimbingController;
 
+// Test Route (untuk debugging)
+Route::get('/test-route', function () {
+    return '<h1 style="color:green; text-align:center; padding:100px;">
+                ✅ Route Test Berhasil!<br>
+                <small>Web Cadangan - edu-lms-kampus.my.id</small>
+            </h1>';
+});
+
+// Route SK Pembimbing
+Route::get('/sk-pembimbing', [App\Http\Controllers\SkPembimbingController::class, 'index'])
+     ->name('sk-pembimbing.index');
+
+Route::get('/sk-pembimbing/{skPembimbing}', [App\Http\Controllers\SkPembimbingController::class, 'show'])
+     ->name('sk-pembimbing.show');
+
+// API untuk e-service
+Route::post('/api/sk-pembimbing/receive', [App\Http\Controllers\Api\SkPembimbingApiController::class, 'receive'])
+     ->name('api.sk-pembimbing.receive');
+
 // API untuk menerima data SK Pembimbing dari e-service
 Route::post('/api/sk-pembimbing/receive', function (Request $request) {
     $request->validate([
@@ -200,17 +219,3 @@ Route::middleware(['auth:dosen'])->group(function () {
 
 // ==================== ROUTE SK PEMBIMBING ====================
 
-// Test Route (untuk debugging)
-Route::get('/test-route', function () {
-    return '<h1 style="color:green; text-align:center; padding:100px;">
-                ✅ Route Test Berhasil!<br>
-                <small>Web Cadangan - edu-lms-kampus.my.id</small>
-            </h1>';
-});
-
-// Route SK Pembimbing
-Route::get('/sk-pembimbing', [App\Http\Controllers\SkPembimbingController::class, 'index'])
-     ->name('sk-pembimbing.index');
-
-Route::get('/sk-pembimbing/{skPembimbing}', [App\Http\Controllers\SkPembimbingController::class, 'show'])
-     ->name('sk-pembimbing.show');
