@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
       // === TAMBAHKAN BAGIAN INI ===
         $middleware->validateCsrfTokens(except: [
             'api/receive-upload',
+            'api/sk-pembimbing/receive',
                       // optional: kalau mau semua route /api/* tidak perlu CSRF
         ]);
     })
