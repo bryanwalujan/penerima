@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SkPembimbing;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SkPembimbingController extends Controller
 {
