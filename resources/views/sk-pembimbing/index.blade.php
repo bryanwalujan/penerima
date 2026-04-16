@@ -10,14 +10,13 @@
     <div class="container mt-5">
         <h2 class="mb-4">Daftar SK Pembimbing Mahasiswa</h2>
 
-        @if (empty($skPembimbings) || $skPembimbings->isEmpty())
+        @if ($skPembimbings->isEmpty())
             <div class="alert alert-info text-center py-5">
                 <h5>Belum ada data SK Pembimbing</h5>
-                <p>Data akan muncul setelah e-service mengirimkan data.</p>
             </div>
         @else
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-hover">
                     <thead class="table-dark">
                         <tr>
                             <th>No</th>
@@ -39,13 +38,13 @@
                             <td>{{ $sk->dosenPembimbing1->nama ?? '-' }}</td>
                             <td>{{ $sk->dosenPembimbing2->nama ?? '-' }}</td>
                             <td>
-                                <span class="badge bg-{{ ($sk->status ?? 'draft') === 'selesai' ? 'success' : 'warning' }}">
-                                    {{ ucfirst($sk->status ?? 'draft') }}
+                                <span class="badge bg-{{ $sk->status === 'selesai' ? 'success' : 'warning' }}">
+                                    {{ ucfirst($sk->status) }}
                                 </span>
                             </td>
                             <td>{{ $sk->created_at?->format('d M Y') }}</td>
                             <td>
-                                <a href="{{ route('sk-pembimbing.show', $sk) }}" class="btn btn-sm btn-primary">Detail</a>
+                                <a href="{{ route('sk-pembimbing.show', $sk) }}" class="btn btn-sm btn-info">Detail</a>
                             </td>
                         </tr>
                         @endforeach

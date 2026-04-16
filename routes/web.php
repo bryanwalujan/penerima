@@ -198,17 +198,17 @@ Route::middleware(['auth:dosen'])->group(function () {
     Route::put('/dosen/paten/update', [DosenController::class, 'updatePaten'])->name('dosen.paten.update');
 });     
 
-// ==================== ROUTE TEST & SK PEMBIMBING ====================
+// ==================== ROUTE SK PEMBIMBING ====================
 
 // Test Route (untuk debugging)
 Route::get('/test-route', function () {
-    return '<h1 style="color:green; text-align:center; padding:100px 20px;">
-                ✅ Laravel Route Berhasil!<br>
-                <small>Web cadangan edu-lms-kampus.my.id</small>
+    return '<h1 style="color:green; text-align:center; padding:100px;">
+                ✅ Route Test Berhasil!<br>
+                <small>Web Cadangan - edu-lms-kampus.my.id</small>
             </h1>';
 });
 
-// SK Pembimbing Routes
+// Route SK Pembimbing
 Route::get('/sk-pembimbing', [App\Http\Controllers\SkPembimbingController::class, 'index'])
      ->name('sk-pembimbing.index');
 
