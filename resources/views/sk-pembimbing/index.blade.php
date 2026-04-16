@@ -10,14 +10,14 @@
     <div class="container mt-5">
         <h2 class="mb-4">Daftar SK Pembimbing Mahasiswa</h2>
 
-        @if (isset($skPembimbings) && $skPembimbings->isEmpty())
+        @if (empty($skPembimbings) || $skPembimbings->isEmpty())
             <div class="alert alert-info text-center py-5">
                 <h5>Belum ada data SK Pembimbing</h5>
                 <p>Data akan muncul setelah e-service mengirimkan data.</p>
             </div>
         @else
             <div class="table-responsive">
-                <table class="table table-striped table-hover">
+                <table class="table table-striped">
                     <thead class="table-dark">
                         <tr>
                             <th>No</th>
@@ -31,22 +31,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($skPembimbings ?? [] as $sk)
+                        @foreach ($skPembimbings as $sk)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $sk->mahasiswa->nama ?? 'N/A' }}</td>
-                            <td style="max-width: 300px;">{{ Str::limit($sk->judul_skripsi ?? '', 80) }}</td>
+                            <td>{{ Str::limit($sk->judul_skripsi ?? '', 80) }}</td>
                             <td>{{ $sk->dosenPembimbing1->nama ?? '-' }}</td>
                             <td>{{ $sk->dosenPembimbing2->nama ?? '-' }}</td>
                             <td>
-                                <span class="badge bg-{{ ($sk->status ?? '') === 'selesai' ? 'success' : 'warning' }}">
+                                <span class="badge bg-{{ ($sk->status ?? 'draft') === 'selesai' ? 'success' : 'warning' }}">
                                     {{ ucfirst($sk->status ?? 'draft') }}
                                 </span>
                             </td>
                             <td>{{ $sk->created_at?->format('d M Y') }}</td>
                             <td>
-                                <a href="{{ route('sk-pembimbing.show', $sk) }}" 
-                                   class="btn btn-sm btn-info">Detail</a>
+                                <a href="{{ route('sk-pembimbing.show', $sk) }}" class="btn btn-sm btn-primary">Detail</a>
                             </td>
                         </tr>
                         @endforeach
