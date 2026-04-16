@@ -39,18 +39,14 @@
                             @foreach ($files as $index => $file)
                             <tr>
                                 <td>{{ $index + 1 }}</td>
-                                <td class="fw-medium">
-                                    <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
-                                    {{ $file['name'] }}
-                                </td>
+                                <td class="fw-medium">{{ $file['name'] }}</td>
                                 <td>{{ $file['size'] }}</td>
                                 <td>{{ $file['modified'] }}</td>
                                 <td class="text-center">
                                     <a href="{{ $file['url'] }}" 
-   class="btn btn-sm btn-success" 
-   target="_blank">
-    <i class="bi bi-download me-1"></i>Download
-</a>
+                                       class="btn btn-sm btn-success">
+                                        <i class="bi bi-download me-1"></i> Download
+                                    </a>
                                 </td>
                             </tr>
                             @endforeach

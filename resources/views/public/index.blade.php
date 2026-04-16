@@ -644,7 +644,7 @@ body {
             <div class="container-wide py-6 relative z-10">
                 <div class="flex flex-col md:flex-row justify-between items-center">
                     <div class="flex items-center mb-4 md:mb-0">
-                        <img src="{{ asset('images/logo/unima-logo.png') }}" alt="Logo UNIMA"
+                        <img src="{{ asset('/public/images/logo/unima-logo.png') }}" alt="Logo UNIMA"
                             class="h-20 w-auto md:h-24 mr-4 filter drop-shadow-xl hover:scale-105 transition-transform">
                         <div>
                             <h1 class="text-xl md:text-2xl font-bold flex items-center">

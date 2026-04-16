@@ -10,8 +10,87 @@ use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\File;
 
-// ==================== API RECEIVE FROM PRESMA ====================
-// API RECEIVE UPLOAD - Simpan ke Storage
+use App\Models\SkPembimbing;
+use App\Models\Dosen;
+
+use App\Http\Controllers\SkPembimbingController;
+
+// Route SK Pembimbing
+Route::prefix('sk-pembimbing')->name('sk-pembimbing.')->group(function () {
+    Route::get('/', [SkPembimbingController::class, 'index'])->name('index');
+    Route::get('/{skPembimbing}', [SkPembimbingController::class, 'show'])->name('show');
+});
+
+// API untuk menerima data SK Pembimbing dari e-service
+Route::post('/api/sk-pembimbing/receive', function (Request $request) {
+    $request->validate([
+        'pengajuan_sk_pembimbing_id' => 'nullable|integer',
+        'mahasiswa_id'               => 'required|integer',
+        'judul_skripsi'              => 'required|string',
+        'file_surat_permohonan'      => 'required|string',
+        'file_slip_ukt'              => 'required|string',
+        'file_proposal_revisi'       => 'required|string',
+        'file_surat_sk'              => 'nullable|string',
+
+        'dosen_pembimbing_1' => 'required|array',
+        'dosen_pembimbing_2' => 'nullable|array',
+    ]);
+
+    // === Sinkronisasi Dosen Berdasarkan NIP atau Nama ===
+    $dosen1 = $this->syncDosen($request->dosen_pembimbing_1);
+    $dosen2 = $request->dosen_pembimbing_2 
+              ? $this->syncDosen($request->dosen_pembimbing_2) 
+              : null;
+
+    // Simpan / Update SK Pembimbing
+    $sk = SkPembimbing::updateOrCreate(
+        ['pengajuan_sk_pembimbing_id' => $request->pengajuan_sk_pembimbing_id],
+        [
+            'mahasiswa_id'           => $request->mahasiswa_id,
+            'dosen_pembimbing_1_id'  => $dosen1->id,
+            'dosen_pembimbing_2_id'  => $dosen2?->id,
+            'judul_skripsi'          => $request->judul_skripsi,
+            'file_surat_permohonan'  => $request->file_surat_permohonan,
+            'file_slip_ukt'          => $request->file_slip_ukt,
+            'file_proposal_revisi'   => $request->file_proposal_revisi,
+            'file_surat_sk'          => $request->file_surat_sk ?? null,
+            'status'                 => 'draft',
+        ]
+    );
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Data SK Pembimbing berhasil diterima di Repodosen',
+        'sk_pembimbing_id' => $sk->id
+    ]);
+});
+
+// Helper function untuk sinkronisasi dosen
+function syncDosen($dosenData)
+{
+    $dosen = Dosen::where('nip', $dosenData['nip'])
+                  ->orWhere('nama', $dosenData['nama'])
+                  ->first();
+
+    if (!$dosen) {
+        $dosen = Dosen::create([
+            'nip'  => $dosenData['nip'] ?? null,
+            'nama' => $dosenData['nama'],
+            'nidn' => $dosenData['nidn'] ?? null,
+        ]);
+    } else {
+        // Update jika ada perubahan
+        $dosen->update([
+            'nama' => $dosenData['nama'],
+            'nip'  => $dosenData['nip'] ?? $dosen->nip,
+        ]);
+    }
+
+    return $dosen;
+}
+
+
+// ==================== API RECEIVE UPLOAD ====================
 Route::post('/api/receive-upload', function (Request $request) {
     $request->validate([
         'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
@@ -20,8 +99,8 @@ Route::post('/api/receive-upload', function (Request $request) {
     $file = $request->file('file');
     $filename = time() . '_' . $file->getClientOriginalName();
 
-    // Simpan ke storage/app/uploads-from-presma
-    $path = $file->storeAs('uploads-from-presma', $filename);
+    // Simpan ke storage/app/private/uploads-from-presma
+    $path = $file->storeAs('private/uploads-from-presma', $filename);
 
     return response()->json([
         'success'  => true,
@@ -30,15 +109,26 @@ Route::post('/api/receive-upload', function (Request $request) {
     ]);
 });
 
+// ==================== DOWNLOAD FILE (Private Storage) ====================
+Route::get('/download/presma/{filename}', function ($filename) {
+    $filePath = storage_path('app/private/uploads-from-presma/' . $filename);
+
+    if (!file_exists($filePath)) {
+        abort(404, 'File tidak ditemukan');
+    }
+
+    return response()->download($filePath, $filename);
+})->name('download.from.presma');
+
 // ==================== HALAMAN DAFTAR FILE ====================
 Route::get('/uploads-from-presma', function () {
-    $directory = storage_path('app/uploads-from-presma');
+    $directory = storage_path('app/private/uploads-from-presma');
 
     if (!file_exists($directory)) {
         mkdir($directory, 0775, true);
     }
 
-    $files = collect(\Illuminate\Support\Facades\File::files($directory))
+    $files = collect(File::files($directory))
         ->map(function ($file) {
             $filename = $file->getFilename();
             return [
@@ -52,17 +142,6 @@ Route::get('/uploads-from-presma', function () {
 
     return view('uploads-from-presma', compact('files'));
 });
-
-// Download File dari Storage
-Route::get('/download/presma/{filename}', function ($filename) {
-    $filePath = storage_path('app/uploads-from-presma/' . $filename);
-
-    if (!file_exists($filePath)) {
-        abort(404, 'File tidak ditemukan');
-    }
-
-    return response()->download($filePath);
-})->name('download.from.presma');
 
 
 // Rute Publik
