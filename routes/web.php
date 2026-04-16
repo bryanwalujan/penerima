@@ -15,6 +15,15 @@ use App\Models\Dosen;
 
 use App\Http\Controllers\SkPembimbingController;
 
+
+// ROUTE TEST - TEMPORARY
+Route::get('/test-route', function () {
+    return '<h1 style="color:green; text-align:center; margin-top:50px;">
+                ✅ Route Laravel Berhasil!<br>
+                Jika kamu melihat ini, berarti Laravel berjalan normal.
+            </h1>';
+});
+
 // Route SK Pembimbing
 Route::get('/sk-pembimbing', [SkPembimbingController::class, 'index'])
      ->name('sk-pembimbing.index');
