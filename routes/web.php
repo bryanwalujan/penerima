@@ -15,22 +15,6 @@ use App\Models\Dosen;
 
 use App\Http\Controllers\SkPembimbingController;
 
-
-// ROUTE TEST - TEMPORARY
-Route::get('/test-route', function () {
-    return '<h1 style="color:green; text-align:center; margin-top:50px;">
-                ✅ Route Laravel Berhasil!<br>
-                Jika kamu melihat ini, berarti Laravel berjalan normal.
-            </h1>';
-});
-
-// Route SK Pembimbing
-Route::get('/sk-pembimbing', [SkPembimbingController::class, 'index'])
-     ->name('sk-pembimbing.index');
-
-Route::get('/sk-pembimbing/{skPembimbing}', [SkPembimbingController::class, 'show'])
-     ->name('sk-pembimbing.show');
-
 // API untuk menerima data SK Pembimbing dari e-service
 Route::post('/api/sk-pembimbing/receive', function (Request $request) {
     $request->validate([
@@ -213,3 +197,21 @@ Route::middleware(['auth:dosen'])->group(function () {
     Route::get('/dosen/paten/edit', [DosenController::class, 'editPaten'])->name('dosen.paten.edit');
     Route::put('/dosen/paten/update', [DosenController::class, 'updatePaten'])->name('dosen.paten.update');
 });     
+
+// ==================== ROUTE SK PEMBIMBING ====================
+// Letakkan di paling bawah, sebelum penutup file
+
+// Route Test (untuk debugging)
+Route::get('/test-route', function () {
+    return '<h1 style="color:green; text-align:center; padding:50px;">
+                ✅ Route Test Berhasil!<br>
+                Laravel sedang berjalan normal.
+            </h1>';
+});
+
+// Route SK Pembimbing
+Route::get('/sk-pembimbing', [App\Http\Controllers\SkPembimbingController::class, 'index'])
+     ->name('sk-pembimbing.index');
+
+Route::get('/sk-pembimbing/{skPembimbing}', [App\Http\Controllers\SkPembimbingController::class, 'show'])
+     ->name('sk-pembimbing.show');
