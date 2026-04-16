@@ -20,12 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class, // Daftarkan AdminMiddleware
         ]);
       
-      // === TAMBAHKAN BAGIAN INI ===
-        $middleware->validateCsrfTokens(except: [
-            'api/receive-upload',
-            'api/sk-pembimbing/receive',
-                      // optional: kalau mau semua route /api/* tidak perlu CSRF
-        ]);
+         $middleware->validateCsrfTokens(except: [
+            'api/sk-pembimbing/receive',   // Route utama
+            'api/*',                       // Opsional: semua route api
+]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
