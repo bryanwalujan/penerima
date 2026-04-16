@@ -1,4 +1,12 @@
-@extends('layouts.admin.app')   @if kamu punya layout, jika tidak ganti dengan html biasa
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
 
 @section('content')
 <div class="container mt-4">
@@ -56,3 +64,6 @@
     </div>
 </div>
 @endsection
+
+</body>
+</html> 
