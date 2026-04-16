@@ -16,10 +16,11 @@ use App\Models\Dosen;
 use App\Http\Controllers\SkPembimbingController;
 
 // Route SK Pembimbing
-Route::prefix('sk-pembimbing')->name('sk-pembimbing.')->group(function () {
-    Route::get('/', [SkPembimbingController::class, 'index'])->name('index');
-    Route::get('/{skPembimbing}', [SkPembimbingController::class, 'show'])->name('show');
-});
+Route::get('/sk-pembimbing', [SkPembimbingController::class, 'index'])
+     ->name('sk-pembimbing.index');
+
+Route::get('/sk-pembimbing/{skPembimbing}', [SkPembimbingController::class, 'show'])
+     ->name('sk-pembimbing.show');
 
 // API untuk menerima data SK Pembimbing dari e-service
 Route::post('/api/sk-pembimbing/receive', function (Request $request) {
