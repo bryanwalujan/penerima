@@ -31,77 +31,9 @@ Route::get('/sk-pembimbing/{skPembimbing}', [App\Http\Controllers\SkPembimbingCo
      ->name('sk-pembimbing.show');
 
 // API untuk e-service
-Route::post('/api/sk-pembimbing/receive', [App\Http\Controllers\Api\SkPembimbingApiController::class, 'receive'])
-     ->name('api.sk-pembimbing.receive');
-
-// API untuk menerima data SK Pembimbing dari e-service
-Route::post('/api/sk-pembimbing/receive', function (Request $request) {
-    $request->validate([
-        'pengajuan_sk_pembimbing_id' => 'nullable|integer',
-        'mahasiswa_id'               => 'required|integer',
-        'judul_skripsi'              => 'required|string',
-        'file_surat_permohonan'      => 'required|string',
-        'file_slip_ukt'              => 'required|string',
-        'file_proposal_revisi'       => 'required|string',
-        'file_surat_sk'              => 'nullable|string',
-
-        'dosen_pembimbing_1' => 'required|array',
-        'dosen_pembimbing_2' => 'nullable|array',
-    ]);
-
-    // === Sinkronisasi Dosen Berdasarkan NIP atau Nama ===
-    $dosen1 = $this->syncDosen($request->dosen_pembimbing_1);
-    $dosen2 = $request->dosen_pembimbing_2 
-              ? $this->syncDosen($request->dosen_pembimbing_2) 
-              : null;
-
-    // Simpan / Update SK Pembimbing
-    $sk = SkPembimbing::updateOrCreate(
-        ['pengajuan_sk_pembimbing_id' => $request->pengajuan_sk_pembimbing_id],
-        [
-            'mahasiswa_id'           => $request->mahasiswa_id,
-            'dosen_pembimbing_1_id'  => $dosen1->id,
-            'dosen_pembimbing_2_id'  => $dosen2?->id,
-            'judul_skripsi'          => $request->judul_skripsi,
-            'file_surat_permohonan'  => $request->file_surat_permohonan,
-            'file_slip_ukt'          => $request->file_slip_ukt,
-            'file_proposal_revisi'   => $request->file_proposal_revisi,
-            'file_surat_sk'          => $request->file_surat_sk ?? null,
-            'status'                 => 'draft',
-        ]
-    );
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Data SK Pembimbing berhasil diterima di Repodosen',
-        'sk_pembimbing_id' => $sk->id
-    ]);
-});
-
-// Helper function untuk sinkronisasi dosen
-function syncDosen($dosenData)
-{
-    $dosen = Dosen::where('nip', $dosenData['nip'])
-                  ->orWhere('nama', $dosenData['nama'])
-                  ->first();
-
-    if (!$dosen) {
-        $dosen = Dosen::create([
-            'nip'  => $dosenData['nip'] ?? null,
-            'nama' => $dosenData['nama'],
-            'nidn' => $dosenData['nidn'] ?? null,
-        ]);
-    } else {
-        // Update jika ada perubahan
-        $dosen->update([
-            'nama' => $dosenData['nama'],
-            'nip'  => $dosenData['nip'] ?? $dosen->nip,
-        ]);
-    }
-
-    return $dosen;
-}
-
+Route::post('/api/sk-pembimbing/receive', [
+    App\Http\Controllers\Api\SkPembimbingApiController::class, 'receive'
+])->name('api.sk-pembimbing.receive');
 
 // ==================== API RECEIVE UPLOAD ====================
 Route::post('/api/receive-upload', function (Request $request) {
