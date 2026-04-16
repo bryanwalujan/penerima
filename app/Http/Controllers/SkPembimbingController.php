@@ -14,13 +14,13 @@ class SkPembimbingController extends Controller
             ->latest()
             ->paginate(20);
 
-        return view('sk_pembimbing.index', compact('skPembimbings'));
+        return view('sk-pembimbing.index', compact('skPembimbings'));
     }
 
     public function show(SkPembimbing $skPembimbing)
     {
         $skPembimbing->load(['mahasiswa', 'dosenPembimbing1', 'dosenPembimbing2']);
 
-        return view('sk_pembimbing.show', compact('skPembimbing'));
+        return view('sk-pembimbing.show', compact('skPembimbing'));
     }
 }
