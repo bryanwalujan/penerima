@@ -15,6 +15,13 @@ use App\Models\Dosen;
 
 use App\Http\Controllers\SkPembimbingController;
 
+use App\Http\Controllers\Api\SyncDosenController;
+
+Route::post(
+    '/sync/dosen-pembimbing',
+    [SyncDosenController::class, 'syncDosenPembimbing']
+)->name('api.sync.dosen-pembimbing');
+
 // Test Route (untuk debugging)
 Route::get('/test-route', function () {
     return '<h1 style="color:green; text-align:center; padding:100px;">
