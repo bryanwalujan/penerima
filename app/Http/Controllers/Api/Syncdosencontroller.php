@@ -8,14 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
-/**
- * SyncDosenController — Web Penerima (repodosen)
- *
- * Menerima data dosen pembimbing dari presma dan melakukan
- * upsert (insert atau update) ke tabel `dosens`.
- *
- * Autentikasi: API Key via header X-Sync-Token
- */
+
 class SyncDosenController extends Controller
 {
     /**
