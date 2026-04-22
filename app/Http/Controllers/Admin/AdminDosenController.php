@@ -14,17 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * AdminDosenController
- *
- * Mengelola data dosen dari sisi admin:
- * index, create, store, show, edit, update, destroy,
- * destroy per-relasi, dan recommend kolaborasi.
- *
- * Middleware 'admin' sebaiknya dipasang di route group,
- * bukan di dalam controller, agar lebih bersih.
- * Namun checkAdmin() tetap dipertahankan sebagai fallback.
- */
 class AdminDosenController extends Controller
 {
     use HasDosenHelpers;
