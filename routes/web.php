@@ -1,117 +1,39 @@
 <?php
+
+use App\Http\Controllers\Admin\AdminDosenController;
+use App\Http\Controllers\Admin\DosenExportController;
+use App\Http\Controllers\Dosen\DosenProfileController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DosenController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\AnalyticsController;
-use Illuminate\Support\Facades\Route;
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-
-use Illuminate\Support\Facades\File;
-
-use App\Models\SkPembimbing;
-use App\Models\Dosen;
-
-use App\Http\Controllers\SkPembimbingController;
-
 use App\Http\Controllers\Api\SyncDosenController;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
+// ── Sync dari Presma (API via web.php sementara) ─────────────────────────────
 Route::post(
     '/sync/dosen-pembimbing',
     [SyncDosenController::class, 'syncDosenPembimbing']
 )->name('api.sync.dosen-pembimbing');
 
-// Test Route (untuk debugging)
-Route::get('/test-route', function () {
-    return '<h1 style="color:green; text-align:center; padding:100px;">
-                ✅ Route Test Berhasil!<br>
-                <small>Web Cadangan - edu-lms-kampus.my.id</small>
-            </h1>';
-});
-
-// Route SK Pembimbing
-Route::get('/sk-pembimbing', [App\Http\Controllers\SkPembimbingController::class, 'index'])
-     ->name('sk-pembimbing.index');
-
-Route::get('/sk-pembimbing/{skPembimbing}', [App\Http\Controllers\SkPembimbingController::class, 'show'])
-     ->name('sk-pembimbing.show');
-
-// API untuk e-service
-Route::post('/api/sk-pembimbing/receive', [
-    App\Http\Controllers\Api\SkPembimbingApiController::class, 'receive'
-])->name('api.sk-pembimbing.receive');
-
-// ==================== API RECEIVE UPLOAD ====================
-Route::post('/api/receive-upload', function (Request $request) {
-    $request->validate([
-        'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-    ]);
-
-    $file = $request->file('file');
-    $filename = time() . '_' . $file->getClientOriginalName();
-
-    // Simpan ke storage/app/private/uploads-from-presma
-    $path = $file->storeAs('private/uploads-from-presma', $filename);
-
-    return response()->json([
-        'success'  => true,
-        'filename' => $filename,
-        'url'      => route('download.from.presma', $filename)
-    ]);
-});
-
-// ==================== DOWNLOAD FILE (Private Storage) ====================
-Route::get('/download/presma/{filename}', function ($filename) {
-    $filePath = storage_path('app/private/uploads-from-presma/' . $filename);
-
-    if (!file_exists($filePath)) {
-        abort(404, 'File tidak ditemukan');
-    }
-
-    return response()->download($filePath, $filename);
-})->name('download.from.presma');
-
-// ==================== HALAMAN DAFTAR FILE ====================
-Route::get('/uploads-from-presma', function () {
-    $directory = storage_path('app/private/uploads-from-presma');
-
-    if (!file_exists($directory)) {
-        mkdir($directory, 0775, true);
-    }
-
-    $files = collect(File::files($directory))
-        ->map(function ($file) {
-            $filename = $file->getFilename();
-            return [
-                'name'     => $filename,
-                'size'     => round($file->getSize() / 1024, 2) . ' KB',
-                'modified' => date('d M Y H:i', $file->getMTime()),
-                'url'      => route('download.from.presma', $filename)
-            ];
-        })
-        ->sortByDesc('modified');
-
-    return view('uploads-from-presma', compact('files'));
-});
-
-
-// Rute Publik
+// ── Rute Publik ───────────────────────────────────────────────────────────────
 Route::get('/', [PublicController::class, 'index'])->name('public.index');
 Route::post('/search', [PublicController::class, 'search'])->name('public.search');
 Route::get('/category/{category}', [PublicController::class, 'category'])->name('public.category');
 
-// Rute Autentikasi Admin
+// ── Autentikasi Admin ─────────────────────────────────────────────────────────
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Rute Autentikasi Dosen (SSO)
+// ── Autentikasi Dosen (SSO Google) ───────────────────────────────────────────
 Route::get('/login/google', [AuthController::class, 'redirectToGoogle'])->name('login.google');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
-// Rute Admin (tanpa middleware, otorisasi dilakukan di controller)
+// ── Admin Routes ──────────────────────────────────────────────────────────────
 Route::prefix('admin')->group(function () {
+
+    // Dashboard
     Route::get('/dashboard', function () {
         if (!Auth::guard('web')->check() || Auth::guard('web')->user()->role !== 'admin') {
             return redirect()->route('login')->with('error', 'Akses ditolak. Hanya admin yang diizinkan.');
@@ -119,42 +41,56 @@ Route::prefix('admin')->group(function () {
         return view('admin.dashboard');
     })->name('admin.dashboard');
 
-    Route::get('/dosen', [DosenController::class, 'index'])->name('admin.dosen.index');
-    Route::get('/dosen/create', [DosenController::class, 'create'])->name('admin.dosen.create');
-    Route::post('/dosen', [DosenController::class, 'store'])->name('admin.dosen.store');
-    Route::get('/dosen/{id}/edit', [DosenController::class, 'edit'])->name('admin.dosen.edit');
-    Route::put('/dosen/{id}', [DosenController::class, 'update'])->name('admin.dosen.update');
-    Route::delete('/dosen/{id}', [DosenController::class, 'destroy'])->name('admin.dosen.destroy');
-    Route::post('/dosen/import', [DosenController::class, 'import'])->name('admin.dosen.import');
-    Route::get('/dosen/export', [DosenController::class, 'export'])->name('admin.dosen.export');
-    Route::get('/dosen/export-template', [DosenController::class, 'exportTemplate'])->name('admin.dosen.exportTemplate');
-    Route::get('/dosen/{id}', [DosenController::class, 'show'])->name('admin.dosen.show');
-    Route::get('/dosen/{id}/recommend', [DosenController::class, 'recommend'])->name('admin.dosen.recommend');
-    Route::delete('/penelitian/{id}', [DosenController::class, 'destroyPenelitian'])->name('admin.penelitian.destroy');
-    Route::delete('/pengabdian/{id}', [DosenController::class, 'destroyPengabdian'])->name('admin.pengabdian.destroy');
-    Route::delete('/haki/{id}', [DosenController::class, 'destroyHaki'])->name('admin.haki.destroy');
-    Route::delete('/paten/{id}', [DosenController::class, 'destroyPaten'])->name('admin.paten.destroy');
+    // ── CRUD Dosen ────────────────────────────────────────────────────────────
+    // Urutan penting: route statis (/export, /export-template, /import)
+    // harus didaftarkan SEBELUM route dinamis (/{id}) agar tidak bentrok.
+    Route::get('/dosen/export',           [DosenExportController::class, 'export'])         ->name('admin.dosen.export');
+    Route::get('/dosen/export-template',  [DosenExportController::class, 'exportTemplate']) ->name('admin.dosen.exportTemplate');
+    Route::post('/dosen/import',          [DosenExportController::class, 'import'])         ->name('admin.dosen.import');
 
-    // Rute untuk Dashboard Analytics
+    Route::get('/dosen',                  [AdminDosenController::class, 'index'])            ->name('admin.dosen.index');
+    Route::get('/dosen/create',           [AdminDosenController::class, 'create'])           ->name('admin.dosen.create');
+    Route::post('/dosen',                 [AdminDosenController::class, 'store'])            ->name('admin.dosen.store');
+    Route::get('/dosen/{id}',             [AdminDosenController::class, 'show'])             ->name('admin.dosen.show');
+    Route::get('/dosen/{id}/edit',        [AdminDosenController::class, 'edit'])             ->name('admin.dosen.edit');
+    Route::put('/dosen/{id}',             [AdminDosenController::class, 'update'])           ->name('admin.dosen.update');
+    Route::delete('/dosen/{id}',          [AdminDosenController::class, 'destroy'])          ->name('admin.dosen.destroy');
+    Route::get('/dosen/{id}/recommend',   [AdminDosenController::class, 'recommend'])        ->name('admin.dosen.recommend');
+
+    // ── Destroy per-relasi ────────────────────────────────────────────────────
+    Route::delete('/penelitian/{id}',     [AdminDosenController::class, 'destroyPenelitian'])->name('admin.penelitian.destroy');
+    Route::delete('/pengabdian/{id}',     [AdminDosenController::class, 'destroyPengabdian'])->name('admin.pengabdian.destroy');
+    Route::delete('/haki/{id}',           [AdminDosenController::class, 'destroyHaki'])      ->name('admin.haki.destroy');
+    Route::delete('/paten/{id}',          [AdminDosenController::class, 'destroyPaten'])     ->name('admin.paten.destroy');
+
+    // ── Analytics ─────────────────────────────────────────────────────────────
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
 });
 
-// Rute Dosen (memerlukan autentikasi dengan guard dosen)
+// ── Dosen Self-Service Routes ─────────────────────────────────────────────────
 Route::middleware(['auth:dosen'])->group(function () {
+
     Route::get('/dosen/dashboard', function () {
         return view('dosen.dashboard');
     })->name('dosen.dashboard');
-    Route::get('/dosen/edit', [DosenController::class, 'editProfile'])->name('dosen.edit');
-    Route::put('/dosen/update', [DosenController::class, 'updateProfile'])->name('dosen.update');
-    Route::get('/dosen/penelitian/edit', [DosenController::class, 'editPenelitian'])->name('dosen.penelitian.edit');
-    Route::put('/dosen/penelitian/update', [DosenController::class, 'updatePenelitian'])->name('dosen.penelitian.update');
-    Route::get('/dosen/pengabdian/edit', [DosenController::class, 'editPengabdian'])->name('dosen.pengabdian.edit');
-    Route::put('/dosen/pengabdian/update', [DosenController::class, 'updatePengabdian'])->name('dosen.pengabdian.update');
-    Route::get('/dosen/haki/edit', [DosenController::class, 'editHaki'])->name('dosen.haki.edit');
-    Route::put('/dosen/haki/update', [DosenController::class, 'updateHaki'])->name('dosen.haki.update');
-    Route::get('/dosen/paten/edit', [DosenController::class, 'editPaten'])->name('dosen.paten.edit');
-    Route::put('/dosen/paten/update', [DosenController::class, 'updatePaten'])->name('dosen.paten.update');
-});     
 
-// ==================== ROUTE SK PEMBIMBING ====================
+    // Profil
+    Route::get('/dosen/edit',    [DosenProfileController::class, 'editProfile'])   ->name('dosen.edit');
+    Route::put('/dosen/update',  [DosenProfileController::class, 'updateProfile']) ->name('dosen.update');
 
+    // Penelitian
+    Route::get('/dosen/penelitian/edit',    [DosenProfileController::class, 'editPenelitian'])   ->name('dosen.penelitian.edit');
+    Route::put('/dosen/penelitian/update',  [DosenProfileController::class, 'updatePenelitian']) ->name('dosen.penelitian.update');
+
+    // Pengabdian
+    Route::get('/dosen/pengabdian/edit',    [DosenProfileController::class, 'editPengabdian'])   ->name('dosen.pengabdian.edit');
+    Route::put('/dosen/pengabdian/update',  [DosenProfileController::class, 'updatePengabdian']) ->name('dosen.pengabdian.update');
+
+    // HAKI
+    Route::get('/dosen/haki/edit',    [DosenProfileController::class, 'editHaki'])   ->name('dosen.haki.edit');
+    Route::put('/dosen/haki/update',  [DosenProfileController::class, 'updateHaki']) ->name('dosen.haki.update');
+
+    // Paten
+    Route::get('/dosen/paten/edit',   [DosenProfileController::class, 'editPaten'])   ->name('dosen.paten.edit');
+    Route::put('/dosen/paten/update', [DosenProfileController::class, 'updatePaten']) ->name('dosen.paten.update');
+});
