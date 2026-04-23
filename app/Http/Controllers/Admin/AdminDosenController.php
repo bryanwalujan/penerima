@@ -52,9 +52,9 @@ class AdminDosenController extends Controller
         $request->validate(array_merge([
             'nama'  => 'required|string|max:255',
             'email' => 'required|email|unique:dosens,email',
-            'nidn'  => 'required|string|max:20|unique:dosens,nidn',
-            'nip'   => 'nullable|string|max:20',
-            'nuptk' => 'nullable|string|max:20',
+            'nidn'  => 'required|string|max:30|unique:dosens,nidn',
+            'nip'   => 'nullable|string|max:30',
+            'nuptk' => 'nullable|string|max:30',
             'foto'  => 'nullable|image|mimes:jpeg,png,jpg|max:10000',
         ], $this->relationValidationRules()));
 
