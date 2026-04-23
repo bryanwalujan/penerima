@@ -1,6 +1,6 @@
 {{-- resources/views/admin/skripsi/index.blade.php --}}
 
-@extends('layouts.admin')
+@extends('layouts.admin.app')
 
 @section('title', 'Data Skripsi')
 
