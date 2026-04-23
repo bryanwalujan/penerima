@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Admin\AdminDosenController;
 use App\Http\Controllers\Admin\DosenExportController;
-use App\Http\Controllers\Admin\DosenSyncLogController;
 use App\Http\Controllers\Dosen\DosenProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PublicController;
@@ -11,95 +10,81 @@ use App\Http\Controllers\Api\SyncDosenController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PUBLIK
-// ══════════════════════════════════════════════════════════════════════════════
-
-Route::get('/',              [PublicController::class, 'index'])  ->name('public.index');
-Route::post('/search',       [PublicController::class, 'search']) ->name('public.search');
+// ── Rute Publik ───────────────────────────────────────────────────────────────
+Route::get('/', [PublicController::class, 'index'])->name('public.index');
+Route::post('/search', [PublicController::class, 'search'])->name('public.search');
 Route::get('/category/{category}', [PublicController::class, 'category'])->name('public.category');
 
-// ══════════════════════════════════════════════════════════════════════════════
-// AUTENTIKASI
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Autentikasi Admin ─────────────────────────────────────────────────────────
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::get('/login',         [AuthController::class, 'showLoginForm'])      ->name('login');
-Route::post('/login',        [AuthController::class, 'login'])              ->name('login.post');
-Route::post('/logout',       [AuthController::class, 'logout'])             ->name('logout');
-Route::get('/login/google',  [AuthController::class, 'redirectToGoogle'])   ->name('login.google');
+// ── Autentikasi Dosen (SSO Google) ───────────────────────────────────────────
+Route::get('/login/google', [AuthController::class, 'redirectToGoogle'])->name('login.google');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ADMIN — satu group, satu middleware
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Admin Routes ──────────────────────────────────────────────────────────────
+Route::prefix('admin')->group(function () {
 
-Route::middleware(['auth', 'role:admin|staff'])
-    ->prefix('admin')
-    ->name('admin.')
-    ->group(function () {
+    // Dashboard
+    Route::get('/dashboard', function () {
+        if (!Auth::guard('web')->check() || Auth::guard('web')->user()->role !== 'admin') {
+            return redirect()->route('login')->with('error', 'Akses ditolak. Hanya admin yang diizinkan.');
+        }
+        return view('admin.dashboard');
+    })->name('admin.dashboard');
 
-        // Dashboard
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
-        })->name('dashboard');
+    // ── CRUD Dosen ────────────────────────────────────────────────────────────
+    // Urutan penting: route statis (/export, /export-template, /import)
+    // harus didaftarkan SEBELUM route dinamis (/{id}) agar tidak bentrok.
+    Route::get('/dosen/export',           [DosenExportController::class, 'export'])         ->name('admin.dosen.export');
+    Route::get('/dosen/export-template',  [DosenExportController::class, 'exportTemplate']) ->name('admin.dosen.exportTemplate');
+    Route::post('/dosen/import',          [DosenExportController::class, 'import'])         ->name('admin.dosen.import');
 
-        // ── CRUD Dosen ────────────────────────────────────────────────────────
-        // Route statis didaftarkan SEBELUM route dinamis {id} agar tidak bentrok
-        Route::get('/dosen/export',          [DosenExportController::class, 'export'])         ->name('dosen.export');
-        Route::get('/dosen/export-template', [DosenExportController::class, 'exportTemplate']) ->name('dosen.exportTemplate');
-        Route::post('/dosen/import',         [DosenExportController::class, 'import'])         ->name('dosen.import');
+    Route::get('/dosen',                  [AdminDosenController::class, 'index'])            ->name('admin.dosen.index');
+    Route::get('/dosen/create',           [AdminDosenController::class, 'create'])           ->name('admin.dosen.create');
+    Route::post('/dosen',                 [AdminDosenController::class, 'store'])            ->name('admin.dosen.store');
+    Route::get('/dosen/{id}',             [AdminDosenController::class, 'show'])             ->name('admin.dosen.show');
+    Route::get('/dosen/{id}/edit',        [AdminDosenController::class, 'edit'])             ->name('admin.dosen.edit');
+    Route::put('/dosen/{id}',             [AdminDosenController::class, 'update'])           ->name('admin.dosen.update');
+    Route::delete('/dosen/{id}',          [AdminDosenController::class, 'destroy'])          ->name('admin.dosen.destroy');
+    Route::get('/dosen/{id}/recommend',   [AdminDosenController::class, 'recommend'])        ->name('admin.dosen.recommend');
 
-        Route::get('/dosen',                 [AdminDosenController::class, 'index'])            ->name('dosen.index');
-        Route::get('/dosen/create',          [AdminDosenController::class, 'create'])           ->name('dosen.create');
-        Route::post('/dosen',                [AdminDosenController::class, 'store'])            ->name('dosen.store');
-        Route::get('/dosen/{id}',            [AdminDosenController::class, 'show'])             ->name('dosen.show');
-        Route::get('/dosen/{id}/edit',       [AdminDosenController::class, 'edit'])             ->name('dosen.edit');
-        Route::put('/dosen/{id}',            [AdminDosenController::class, 'update'])           ->name('dosen.update');
-        Route::delete('/dosen/{id}',         [AdminDosenController::class, 'destroy'])          ->name('dosen.destroy');
-        Route::get('/dosen/{id}/recommend',  [AdminDosenController::class, 'recommend'])        ->name('dosen.recommend');
+    // ── Destroy per-relasi ────────────────────────────────────────────────────
+    Route::delete('/penelitian/{id}',     [AdminDosenController::class, 'destroyPenelitian'])->name('admin.penelitian.destroy');
+    Route::delete('/pengabdian/{id}',     [AdminDosenController::class, 'destroyPengabdian'])->name('admin.pengabdian.destroy');
+    Route::delete('/haki/{id}',           [AdminDosenController::class, 'destroyHaki'])      ->name('admin.haki.destroy');
+    Route::delete('/paten/{id}',          [AdminDosenController::class, 'destroyPaten'])     ->name('admin.paten.destroy');
 
-        // ── Destroy per-relasi ────────────────────────────────────────────────
-        Route::delete('/penelitian/{id}',    [AdminDosenController::class, 'destroyPenelitian'])->name('penelitian.destroy');
-        Route::delete('/pengabdian/{id}',    [AdminDosenController::class, 'destroyPengabdian'])->name('pengabdian.destroy');
-        Route::delete('/haki/{id}',          [AdminDosenController::class, 'destroyHaki'])      ->name('haki.destroy');
-        Route::delete('/paten/{id}',         [AdminDosenController::class, 'destroyPaten'])     ->name('paten.destroy');
+    // ── Analytics ─────────────────────────────────────────────────────────────
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
+});
 
-        // ── Analytics ─────────────────────────────────────────────────────────
-        Route::get('/analytics',             [AnalyticsController::class, 'index'])             ->name('analytics.index');
+// ── Dosen Self-Service Routes ─────────────────────────────────────────────────
+Route::middleware(['auth:dosen'])->group(function () {
 
-        // ── Data Dosen Sync (lihat data masuk dari e-Service) ─────────────────
-        Route::get('/dosen-sync',            [DosenSyncLogController::class, 'index'])          ->name('dosen-sync.index');
-        Route::get('/dosen-sync/{dosen}',    [DosenSyncLogController::class, 'show'])           ->name('dosen-sync.show');
-    });
+    Route::get('/dosen/dashboard', function () {
+        return view('dosen.dashboard');
+    })->name('dosen.dashboard');
 
-// ══════════════════════════════════════════════════════════════════════════════
-// DOSEN SELF-SERVICE
-// ══════════════════════════════════════════════════════════════════════════════
+    // Profil
+    Route::get('/dosen/edit',    [DosenProfileController::class, 'editProfile'])   ->name('dosen.edit');
+    Route::put('/dosen/update',  [DosenProfileController::class, 'updateProfile']) ->name('dosen.update');
 
-Route::middleware(['auth:dosen'])
-    ->prefix('dosen')
-    ->name('dosen.')
-    ->group(function () {
+    // Penelitian
+    Route::get('/dosen/penelitian/edit',    [DosenProfileController::class, 'editPenelitian'])   ->name('dosen.penelitian.edit');
+    Route::put('/dosen/penelitian/update',  [DosenProfileController::class, 'updatePenelitian']) ->name('dosen.penelitian.update');
 
-        Route::get('/dashboard', fn() => view('dosen.dashboard'))->name('dashboard');
+    // Pengabdian
+    Route::get('/dosen/pengabdian/edit',    [DosenProfileController::class, 'editPengabdian'])   ->name('dosen.pengabdian.edit');
+    Route::put('/dosen/pengabdian/update',  [DosenProfileController::class, 'updatePengabdian']) ->name('dosen.pengabdian.update');
 
-        // Profil
-        Route::get('/edit',    [DosenProfileController::class, 'editProfile'])   ->name('edit');
-        Route::put('/update',  [DosenProfileController::class, 'updateProfile']) ->name('update');
+    // HAKI
+    Route::get('/dosen/haki/edit',    [DosenProfileController::class, 'editHaki'])   ->name('dosen.haki.edit');
+    Route::put('/dosen/haki/update',  [DosenProfileController::class, 'updateHaki']) ->name('dosen.haki.update');
 
-        // Penelitian
-        Route::get('/penelitian/edit',   [DosenProfileController::class, 'editPenelitian'])   ->name('penelitian.edit');
-        Route::put('/penelitian/update', [DosenProfileController::class, 'updatePenelitian']) ->name('penelitian.update');
-
-        // Pengabdian
-        Route::get('/pengabdian/edit',   [DosenProfileController::class, 'editPengabdian'])   ->name('pengabdian.edit');
-        Route::put('/pengabdian/update', [DosenProfileController::class, 'updatePengabdian']) ->name('pengabdian.update');
-
-        // HAKI
-        Route::get('/haki/edit',   [DosenProfileController::class, 'editHaki'])   ->name('haki.edit');
-        Route::put('/haki/update', [DosenProfileController::class, 'updateHaki']) ->name('haki.update');
-
-        // Paten
-        Route::get('/paten/edit',   [DosenProfileController::class, 'editPaten'])   ->name('paten.edit');
-        Route::put('/paten/update', [DosenProfileController::class, 'updatePaten']) ->name('paten.update');
-    });
+    // Paten
+    Route::get('/dosen/paten/edit',   [DosenProfileController::class, 'editPaten'])   ->name('dosen.paten.edit');
+    Route::put('/dosen/paten/update', [DosenProfileController::class, 'updatePaten']) ->name('dosen.paten.update');
+});

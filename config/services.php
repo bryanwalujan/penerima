@@ -22,6 +22,9 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
+    'repodosen_sync' => [
+    'receive_token' => env('REPODOSEN_SYNC_TOKEN'),
+    ],
     'presma_sync' => [
         'token' => env('PRESMA_SYNC_TOKEN'),
     ],
