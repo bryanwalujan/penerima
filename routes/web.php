@@ -9,6 +9,8 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Api\SyncDosenController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Admin\SkripsiController;
+
 
 // ── Rute Publik ───────────────────────────────────────────────────────────────
 Route::get('/', [PublicController::class, 'index'])->name('public.index');
@@ -59,6 +61,13 @@ Route::prefix('admin')->group(function () {
 
     // ── Analytics ─────────────────────────────────────────────────────────────
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
+
+    // CRUD Skripsi
+    Route::get('/skripsi', [SkripsiController::class, 'index'])->name('admin.skripsi.index');
+    Route::get('/skripsi/{skripsi}', [SkripsiController::class, 'show'])->name('admin.skripsi.show');
+    Route::get('/skripsi/{skripsi}/download/{fileType}', [SkripsiController::class, 'downloadFile'])->name('admin.skripsi.download');
+    Route::get('/skripsi/{skripsi}/preview/{fileType}', [SkripsiController::class, 'previewFile'])->name('admin.skripsi.preview');
+    Route::delete('/skripsi/{skripsi}/file/{fileType}', [SkripsiController::class, 'deleteFile'])->name('admin.skripsi.delete-file');
 });
 
 // ── Dosen Self-Service Routes ─────────────────────────────────────────────────

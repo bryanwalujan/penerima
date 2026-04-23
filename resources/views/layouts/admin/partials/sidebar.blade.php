@@ -23,6 +23,10 @@
             <i class="fas fa-chart-bar text-blue-300 mr-3"></i>
             <span>Analytics</span>
         </a>
+        <a href="{{ route('admin.skripsi.index') }}" class="nav-link">
+            <i class="fas fa-graduation-cap me-2"></i>
+            <span>Data Skripsi</span>
+        </a>
     </div>
 
     <div class="absolute bottom-0 w-full p-4 border-t border-blue-700">
