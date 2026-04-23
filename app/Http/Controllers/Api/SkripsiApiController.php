@@ -56,6 +56,20 @@ class SkripsiApiController extends Controller
             'files.proposal'          => 'nullable|string',
         ]);
 
+        // DEBUG: Log apakah file diterima
+    if (!empty($validated['files'])) {
+        foreach ($validated['files'] as $fileKey => $base64Content) {
+            $decodedSize = strlen(base64_decode($base64Content));
+            Log::info("[SkripsiApi] Received file '{$fileKey}' - Base64 length: " . strlen($base64Content) . ", Decoded size: {$decodedSize} bytes");
+        }
+    } else {
+        Log::warning("[SkripsiApi] No files received in request", [
+            'has_files_key' => isset($validated['files']),
+            'pendaftaran_id' => $validated['pendaftaran_id'] ?? null
+        ]);
+    }
+
+
         try {
             $result = $this->syncService->process($validated);
 
