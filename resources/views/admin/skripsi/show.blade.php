@@ -1,6 +1,6 @@
 {{-- resources/views/admin/skripsi/show.blade.php --}}
 
-@extends('layouts.admin')
+@extends('layouts.admin.app')
 
 @section('title', 'Detail Skripsi - ' . $skripsi->nama_mahasiswa)
 
