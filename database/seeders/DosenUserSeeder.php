@@ -11,24 +11,31 @@ class DosenUserSeeder extends Seeder
     public function run(): void
     {
         $dosens = DB::table('dosens')->whereNotNull('email')->get();
+        $count  = 0;
 
         foreach ($dosens as $dosen) {
-            // Cek apakah user dengan email ini sudah ada
-            $exists = DB::table('users')->where('email', $dosen->email)->exists();
+            if (empty(trim($dosen->email ?? ''))) continue;
 
-            if (!$exists) {
-                DB::table('users')->insert([
-                    'name'              => $dosen->nama ?? 'Dosen',
-                    'email'             => $dosen->email,
-                    'role'              => 'dosen',
-                    'password'          => Hash::make('password'),
-                    'email_verified_at' => now(),
-                    'created_at'        => now(),
-                    'updated_at'        => now(),
-                ]);
-            }
+            $exists = DB::table('users')->where('email', $dosen->email)->exists();
+            if ($exists) continue;
+
+            // Generate ID manual karena kolom id tidak auto_increment
+            $maxId = DB::table('users')->max('id') ?? 0;
+
+            DB::table('users')->insert([
+                'id'                => $maxId + 1,
+                'name'              => $dosen->nama ?? 'Dosen',
+                'email'             => $dosen->email,
+                'role'              => 'dosen',
+                'password'          => Hash::make('password'),
+                'email_verified_at' => now(),
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ]);
+
+            $count++;
         }
 
-        $this->command->info('Seeder dosen selesai: ' . $dosens->count() . ' dosen diproses.');
+        $this->command->info("Selesai: {$count} dosen berhasil ditambahkan ke tabel users.");
     }
 }
