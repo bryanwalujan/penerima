@@ -51,11 +51,11 @@ class SkripsiController extends Controller
     {
         $skripsi->load(['dosenPembimbing1', 'dosenPembimbing2']);
         
-        // Cek keberadaan file
+        // Cek keberadaan file di kedua disk
         $files = [
-            'skripsi' => $skripsi->file_skripsi ? Storage::disk('public')->exists($skripsi->file_skripsi) : false,
-            'sk_pembimbing' => $skripsi->file_sk_pembimbing ? Storage::disk('public')->exists($skripsi->file_sk_pembimbing) : false,
-            'proposal' => $skripsi->file_proposal ? Storage::disk('public')->exists($skripsi->file_proposal) : false,
+            'skripsi' => $this->checkFileExists($skripsi->file_skripsi),
+            'sk_pembimbing' => $this->checkFileExists($skripsi->file_sk_pembimbing),
+            'proposal' => $this->checkFileExists($skripsi->file_proposal),
         ];
 
         return view('admin.skripsi.show', compact('skripsi', 'files'));
@@ -90,16 +90,14 @@ class SkripsiController extends Controller
             abort(404, 'File tidak ditemukan di database');
         }
 
-        // Coba cek di disk public dulu, lalu local
-        $disk = 'public';
-        if (!Storage::disk($disk)->exists($fileField)) {
-            $disk = 'local';
-            if (!Storage::disk($disk)->exists($fileField)) {
-                abort(404, 'File tidak ditemukan di storage');
-            }
+        // Cari file di disk yang tersedia
+        $disk = $this->getDiskWhereFileExists($fileField);
+        
+        if ($disk) {
+            return Storage::disk($disk)->download($fileField, $fileName);
         }
-
-        return Storage::disk($disk)->download($fileField, $fileName);
+        
+        abort(404, 'File tidak ditemukan di storage');
     }
 
     /**
@@ -127,21 +125,64 @@ class SkripsiController extends Controller
             abort(404, 'File tidak ditemukan di database');
         }
 
-        // Coba cek di disk public dulu, lalu local
-        $disk = 'public';
-        if (!Storage::disk($disk)->exists($fileField)) {
-            $disk = 'local';
-            if (!Storage::disk($disk)->exists($fileField)) {
-                abort(404, 'File tidak ditemukan di storage: ' . $fileField);
+        // Log untuk debugging
+        \Log::info('Mencoba mengakses file', [
+            'file_field' => $fileField,
+            'file_type' => $fileType,
+            'skripsi_id' => $skripsi->id
+        ]);
+
+        // Cari file di disk yang tersedia
+        $disk = $this->getDiskWhereFileExists($fileField);
+        
+        if ($disk) {
+            $file = Storage::disk($disk)->get($fileField);
+            $mimeType = Storage::disk($disk)->mimeType($fileField);
+            
+            \Log::info('File ditemukan', [
+                'disk' => $disk,
+                'path' => $fileField,
+                'size' => strlen($file)
+            ]);
+            
+            return response($file, 200)
+                ->header('Content-Type', $mimeType)
+                ->header('Content-Disposition', 'inline; filename="' . basename($fileField) . '"');
+        }
+        
+        // Log error jika file tidak ditemukan
+        \Log::error('File tidak ditemukan', [
+            'file_field' => $fileField,
+            'checked_disks' => ['local', 'public']
+        ]);
+        
+        abort(404, 'File tidak ditemukan di storage: ' . $fileField);
+    }
+
+    /**
+     * Serve file dari private storage
+     */
+    public function serveFile($filename)
+    {
+        // Cari file di folder skripsi di private storage
+        $paths = [
+            'skripsi/' . $filename,
+            'private/skripsi/' . $filename,
+            $filename
+        ];
+        
+        foreach ($paths as $path) {
+            if (Storage::disk('local')->exists($path)) {
+                $file = Storage::disk('local')->get($path);
+                $mimeType = Storage::disk('local')->mimeType($path);
+                
+                return response($file, 200)
+                    ->header('Content-Type', $mimeType)
+                    ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
             }
         }
-
-        $file = Storage::disk($disk)->get($fileField);
-        $mimeType = Storage::disk($disk)->mimeType($fileField);
         
-        return response($file, 200)
-            ->header('Content-Type', $mimeType)
-            ->header('Content-Disposition', 'inline; filename="' . basename($fileField) . '"');
+        abort(404, 'File tidak ditemukan');
     }
 
     /**
@@ -166,12 +207,15 @@ class SkripsiController extends Controller
         }
 
         if ($skripsi->$fileField) {
-            // Hapus dari kedua disk
-            if (Storage::disk('public')->exists($skripsi->$fileField)) {
-                Storage::disk('public')->delete($skripsi->$fileField);
-            }
-            if (Storage::disk('local')->exists($skripsi->$fileField)) {
-                Storage::disk('local')->delete($skripsi->$fileField);
+            // Hapus dari semua disk
+            $disks = ['public', 'local'];
+            foreach ($disks as $disk) {
+                if (Storage::disk($disk)->exists($skripsi->$fileField)) {
+                    Storage::disk($disk)->delete($skripsi->$fileField);
+                    \Log::info('File dihapus dari disk: ' . $disk, [
+                        'path' => $skripsi->$fileField
+                    ]);
+                }
             }
             
             $skripsi->update([$fileField => null]);
@@ -181,4 +225,37 @@ class SkripsiController extends Controller
 
         return response()->json(['error' => 'File tidak ditemukan'], 404);
     }
-}
+
+    /**
+     * Helper: Cek apakah file exists di salah satu disk
+     */
+    private function checkFileExists($filePath)
+    {
+        if (!$filePath) {
+            return false;
+        }
+        
+        return Storage::disk('local')->exists($filePath) || 
+               Storage::disk('public')->exists($filePath);
+    }
+
+    /**
+     * Helper: Dapatkan disk dimana file exists
+     */
+    private function getDiskWhereFileExists($filePath)
+    {
+        if (!$filePath) {
+            return null;
+        }
+        
+        if (Storage::disk('local')->exists($filePath)) {
+            return 'local';
+        }
+        
+        if (Storage::disk('public')->exists($filePath)) {
+            return 'public';
+        }
+        
+        return null;
+    }
+} 

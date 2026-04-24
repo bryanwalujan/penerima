@@ -68,6 +68,11 @@ Route::prefix('admin')->group(function () {
     Route::get('/skripsi/{skripsi}/download/{fileType}', [SkripsiController::class, 'downloadFile'])->name('admin.skripsi.download');
     Route::get('/skripsi/{skripsi}/preview/{fileType}', [SkripsiController::class, 'previewFile'])->name('admin.skripsi.preview');
     Route::delete('/skripsi/{skripsi}/file/{fileType}', [SkripsiController::class, 'deleteFile'])->name('admin.skripsi.delete-file');
+
+    // Serve file dari private storage
+    Route::get('/storage/skripsi/{filename}', [SkripsiController::class, 'serveFile'])
+        ->name('admin.skripsi.serve')
+        ->where('filename', '.*');
 });
 
 // ── Dosen Self-Service Routes ─────────────────────────────────────────────────
