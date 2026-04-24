@@ -19,12 +19,10 @@ Route::get('/', [PublicController::class, 'index'])->name('public.index');
 Route::post('/search', [PublicController::class, 'search'])->name('public.search');
 Route::get('/category/{category}', [PublicController::class, 'category'])->name('public.category');
 
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+// ── Autentikasi (satu form untuk semua role) ──────────────────────────────────
+Route::get('/login',  [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-// ── Autentikasi Dosen (Manual) ───────────────────────────────────────────────
-Route::post('/login/dosen', [AuthController::class, 'loginDosen'])->name('login.dosen');
+Route::post('/logout',[AuthController::class, 'logout'])->name('logout');
 
 // ── Admin Routes ──────────────────────────────────────────────────────────────
 Route::prefix('admin')->group(function () {
@@ -100,9 +98,9 @@ Route::prefix('admin')->group(function () {
 });
 
 // ── Dosen Self-Service Routes ─────────────────────────────────────────────────
-Route::middleware(['auth:dosen'])->group(function () {
-
+Route::middleware(['auth'])->group(function () {
     Route::get('/dosen/dashboard', function () {
+        abort_if(Auth::user()->role !== 'dosen', 403);
         return view('dosen.dashboard');
     })->name('dosen.dashboard');
 
