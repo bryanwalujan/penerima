@@ -21,22 +21,22 @@ public function login(Request $request)
         'password' => 'required',
     ]);
 
-    if (Auth::attempt($credentials)) {
-        $user = Auth::user();
+    // Coba guard web dulu (admin/user biasa)
+    if (Auth::guard('web')->attempt($credentials)) {
+        $user = Auth::guard('web')->user();
         $request->session()->regenerate();
 
-        // Redirect berdasarkan role
         if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->role === 'dosen') {
-            return redirect()->route('dosen.dashboard');
-        }
+        Auth::guard('web')->logout();
+    }
 
-        // Role tidak dikenal — logout paksa
-        Auth::logout();
-        return back()->withErrors(['email' => 'Role akun tidak dikenali.']);
+    // Coba guard dosen
+    if (Auth::guard('dosen')->attempt($credentials)) {
+        $request->session()->regenerate();
+        return redirect()->route('dosen.dashboard');
     }
 
     return back()
@@ -44,12 +44,12 @@ public function login(Request $request)
         ->withInput($request->only('email'));
 }
 
-    // Logout
-    public function logout(Request $request)
-    {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        return redirect('/login');
-    }
+public function logout(Request $request)
+{
+    Auth::guard('web')->logout();
+    Auth::guard('dosen')->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/login');
+}
 }

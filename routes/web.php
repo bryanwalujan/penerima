@@ -97,28 +97,27 @@ Route::prefix('admin')->group(function () {
     });
 });
 
-// ── Dosen Self-Service Routes ─────────────────────────────────────────────────
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth:dosen'])->group(function () {
     Route::get('/dosen/dashboard', function () {
-        abort_if(Auth::user()->role !== 'dosen', 403);
-        return view('dosen.dashboard');
+        $dosen = Auth::guard('dosen')->user();
+        return view('dosen.dashboard', compact('dosen'));
     })->name('dosen.dashboard');
 
     // Profil
-    Route::get('/dosen/edit',    [DosenProfileController::class, 'editProfile'])   ->name('dosen.edit');
-    Route::put('/dosen/update',  [DosenProfileController::class, 'updateProfile']) ->name('dosen.update');
+    Route::get('/dosen/edit',   [DosenProfileController::class, 'editProfile'])   ->name('dosen.edit');
+    Route::put('/dosen/update', [DosenProfileController::class, 'updateProfile']) ->name('dosen.update');
 
     // Penelitian
-    Route::get('/dosen/penelitian/edit',    [DosenProfileController::class, 'editPenelitian'])   ->name('dosen.penelitian.edit');
-    Route::put('/dosen/penelitian/update',  [DosenProfileController::class, 'updatePenelitian']) ->name('dosen.penelitian.update');
+    Route::get('/dosen/penelitian/edit',   [DosenProfileController::class, 'editPenelitian'])   ->name('dosen.penelitian.edit');
+    Route::put('/dosen/penelitian/update', [DosenProfileController::class, 'updatePenelitian']) ->name('dosen.penelitian.update');
 
     // Pengabdian
-    Route::get('/dosen/pengabdian/edit',    [DosenProfileController::class, 'editPengabdian'])   ->name('dosen.pengabdian.edit');
-    Route::put('/dosen/pengabdian/update',  [DosenProfileController::class, 'updatePengabdian']) ->name('dosen.pengabdian.update');
+    Route::get('/dosen/pengabdian/edit',   [DosenProfileController::class, 'editPengabdian'])   ->name('dosen.pengabdian.edit');
+    Route::put('/dosen/pengabdian/update', [DosenProfileController::class, 'updatePengabdian']) ->name('dosen.pengabdian.update');
 
     // HAKI
-    Route::get('/dosen/haki/edit',    [DosenProfileController::class, 'editHaki'])   ->name('dosen.haki.edit');
-    Route::put('/dosen/haki/update',  [DosenProfileController::class, 'updateHaki']) ->name('dosen.haki.update');
+    Route::get('/dosen/haki/edit',   [DosenProfileController::class, 'editHaki'])   ->name('dosen.haki.edit');
+    Route::put('/dosen/haki/update', [DosenProfileController::class, 'updateHaki']) ->name('dosen.haki.update');
 
     // Paten
     Route::get('/dosen/paten/edit',   [DosenProfileController::class, 'editPaten'])   ->name('dosen.paten.edit');

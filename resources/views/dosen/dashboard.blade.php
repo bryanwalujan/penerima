@@ -71,13 +71,13 @@
 <body class="min-h-screen flex items-center justify-center p-4">
     <div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-blue-50 to-transparent z-0"></div>
 
-    <!-- Floating Elements -->
     <div class="absolute top-20 left-10 w-16 h-16 rounded-full bg-blue-200 opacity-20 floating"></div>
     <div class="absolute bottom-20 right-10 w-24 h-24 rounded-full bg-blue-200 opacity-15 floating" style="animation-delay: 2s;"></div>
 
     <div class="relative z-10 w-full max-w-2xl">
-        <!-- Header Dashboard -->
         <div class="dashboard-card bg-white">
+
+            {{-- Header --}}
             <div class="gradient-bg text-white p-6 text-center relative overflow-hidden">
                 <div class="absolute top-0 right-0 opacity-20">
                     <i class="fas fa-user-graduate text-[100px]"></i>
@@ -85,11 +85,14 @@
                 <h2 class="text-2xl font-bold relative z-10 flex items-center justify-center">
                     <i class="fas fa-tachometer-alt mr-3"></i> Dashboard Dosen
                 </h2>
-                <p class="text-blue-100 mt-2 relative z-10">Selamat datang di Repositori Dosen Teknik Informatika</p>
+                <p class="text-blue-100 mt-2 relative z-10">
+                    Selamat datang, {{ $dosen->nama ?? 'Dosen' }}
+                </p>
             </div>
 
-            <!-- Body Dashboard -->
+            {{-- Body --}}
             <div class="p-8">
+
                 @if (session('success'))
                     <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
                         <div class="flex items-center">
@@ -98,6 +101,7 @@
                         </div>
                     </div>
                 @endif
+
                 @if (session('error'))
                     <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
                         <div class="flex items-center">
@@ -108,63 +112,117 @@
                 @endif
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Informasi Dosen -->
+
+                    {{-- Informasi Pribadi --}}
                     <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-lg font-semibold mb-4 text-gray-700">Informasi Pribadi</h3>
-                        <p><strong>Nama:</strong> {{ Auth::guard('dosen')->user()->nama ?? 'Tidak tersedia' }}</p>
-                        <p><strong>Email:</strong> {{ Auth::guard('dosen')->user()->email ?? 'Tidak tersedia' }}</p>
-                        <p><strong>NIDN:</strong> {{ Auth::guard('dosen')->user()->nidn ?? 'Tidak tersedia' }}</p>
-                        <p><strong>NIP:</strong> {{ Auth::guard('dosen')->user()->nip ?? 'Tidak tersedia' }}</p>
-                        <p><strong>NUPTK:</strong> {{ Auth::guard('dosen')->user()->nuptk ?? 'Tidak tersedia' }}</p>
-                        @if (Auth::guard('dosen')->user()->foto)
-                            <p class="mt-4"><strong>Foto:</strong> <img
-                                    src="{{ asset('storage/' . Auth::guard('dosen')->user()->foto) }}" alt="Foto Dosen"
-                                    class="w-24 h-24 object-cover rounded-full"></p>
-                        @endif
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700">
+                            <i class="fas fa-id-card mr-2 text-blue-600"></i> Informasi Pribadi
+                        </h3>
+
+                        {{-- Foto --}}
+                        <div class="flex justify-center mb-4">
+                            @if ($dosen && $dosen->foto)
+                                <img src="{{ asset('storage/' . $dosen->foto) }}"
+                                     alt="Foto Dosen"
+                                     class="w-24 h-24 object-cover rounded-full border-4 border-blue-200 shadow">
+                            @else
+                                <div class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200 shadow">
+                                    <i class="fas fa-user text-blue-400 text-3xl"></i>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="space-y-2 text-sm text-gray-700">
+                            <p>
+                                <span class="font-semibold text-gray-500">Nama</span><br>
+                                {{ $dosen->nama ?? 'Tidak tersedia' }}
+                            </p>
+                            <p>
+                                <span class="font-semibold text-gray-500">Email</span><br>
+                                {{ $dosen->email ?? 'Tidak tersedia' }}
+                            </p>
+                            <p>
+                                <span class="font-semibold text-gray-500">NIDN</span><br>
+                                {{ $dosen->nidn ?? 'Tidak tersedia' }}
+                            </p>
+                            <p>
+                                <span class="font-semibold text-gray-500">NIP</span><br>
+                                {{ $dosen->nip ?? 'Tidak tersedia' }}
+                            </p>
+                            <p>
+                                <span class="font-semibold text-gray-500">NUPTK</span><br>
+                                {{ $dosen->nuptk ?? 'Tidak tersedia' }}
+                            </p>
+                        </div>
                     </div>
 
-                    <!-- Aksi Cepat -->
+                    {{-- Aksi Cepat --}}
                     <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-lg font-semibold mb-4 text-gray-700">Aksi Cepat</h3>
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700">
+                            <i class="fas fa-bolt mr-2 text-yellow-500"></i> Aksi Cepat
+                        </h3>
+
                         <a href="{{ route('dosen.edit') }}"
-                            class="btn-action w-full bg-green-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-4 hover:bg-green-700">
+                           class="btn-action w-full bg-green-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-green-700">
                             <i class="fas fa-edit mr-2"></i> Edit Profil
                         </a>
+
                         <a href="{{ route('dosen.penelitian.edit') }}"
-                            class="btn-action w-full bg-blue-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-4 hover:bg-blue-700">
-                            <i class="fas fa-plus mr-2"></i> Tambah Penelitian ({{ Auth::guard('dosen')->user()->penelitians->count() }})
+                           class="btn-action w-full bg-blue-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-blue-700">
+                            <i class="fas fa-flask mr-2"></i>
+                            Penelitian
+                            <span class="ml-auto bg-blue-800 text-xs px-2 py-0.5 rounded-full">
+                                {{ $dosen->penelitians->count() }}
+                            </span>
                         </a>
+
                         <a href="{{ route('dosen.pengabdian.edit') }}"
-                            class="btn-action w-full bg-yellow-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-700">
-                            <i class="fas fa-hands-helping mr-2"></i> Tambah Pengabdian ({{ Auth::guard('dosen')->user()->pengabdians->count() }})
+                           class="btn-action w-full bg-yellow-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-yellow-700">
+                            <i class="fas fa-hands-helping mr-2"></i>
+                            Pengabdian
+                            <span class="ml-auto bg-yellow-800 text-xs px-2 py-0.5 rounded-full">
+                                {{ $dosen->pengabdians->count() }}
+                            </span>
                         </a>
+
                         <a href="{{ route('dosen.haki.edit') }}"
-                            class="btn-action w-full bg-purple-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-4 hover:bg-purple-700">
-                            <i class="fas fa-copyright mr-2"></i> Tambah HAKI ({{ Auth::guard('dosen')->user()->hakis->count() }})
+                           class="btn-action w-full bg-purple-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-purple-700">
+                            <i class="fas fa-copyright mr-2"></i>
+                            HAKI
+                            <span class="ml-auto bg-purple-800 text-xs px-2 py-0.5 rounded-full">
+                                {{ $dosen->hakis->count() }}
+                            </span>
                         </a>
+
                         <a href="{{ route('dosen.paten.edit') }}"
-                            class="btn-action w-full bg-red-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-4 hover:bg-red-700">
-                            <i class="fas fa-patent mr-2"></i> Tambah Paten ({{ Auth::guard('dosen')->user()->patens->count() }})
+                           class="btn-action w-full bg-red-500 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-red-600">
+                            <i class="fas fa-certificate mr-2"></i>
+                            Paten
+                            <span class="ml-auto bg-red-700 text-xs px-2 py-0.5 rounded-full">
+                                {{ $dosen->patens->count() }}
+                            </span>
                         </a>
-                        <form action="{{ route('logout') }}" method="POST" class="w-full">
+
+                        <form action="{{ route('logout') }}" method="POST" class="w-full mt-2">
                             @csrf
                             <button type="submit"
-                                class="btn-action w-full bg-red-600 text-white py-3 px-4 rounded-lg flex items-center justify-center hover:bg-red-700">
+                                class="btn-action w-full bg-gray-700 text-white py-3 px-4 rounded-lg flex items-center justify-center hover:bg-gray-800">
                                 <i class="fas fa-sign-out-alt mr-2"></i> Logout
                             </button>
                         </form>
                     </div>
+
                 </div>
             </div>
 
-            <!-- Footer -->
+            {{-- Footer --}}
             <div class="bg-gray-50 px-6 py-4 text-center border-t">
-                <p class="text-sm text-gray-600">
-                    © 2025 Repositori Dosen - Teknik Informatika UNIMA
+                <p class="text-sm text-gray-500">
+                    © 2025 Repositori Dosen — Teknik Informatika UNIMA
                 </p>
             </div>
+
         </div>
     </div>
 </body>
-
 </html>
