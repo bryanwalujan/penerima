@@ -53,9 +53,9 @@ class SkripsiController extends Controller
         
         // Cek keberadaan file
         $files = [
-            'skripsi' => $skripsi->file_skripsi ? Storage::exists($skripsi->file_skripsi) : false,
-            'sk_pembimbing' => $skripsi->file_sk_pembimbing ? Storage::exists($skripsi->file_sk_pembimbing) : false,
-            'proposal' => $skripsi->file_proposal ? Storage::exists($skripsi->file_proposal) : false,
+            'skripsi' => $skripsi->file_skripsi ? Storage::disk('public')->exists($skripsi->file_skripsi) : false,
+            'sk_pembimbing' => $skripsi->file_sk_pembimbing ? Storage::disk('public')->exists($skripsi->file_sk_pembimbing) : false,
+            'proposal' => $skripsi->file_proposal ? Storage::disk('public')->exists($skripsi->file_proposal) : false,
         ];
 
         return view('admin.skripsi.show', compact('skripsi', 'files'));
@@ -86,11 +86,20 @@ class SkripsiController extends Controller
                 abort(404, 'Tipe file tidak ditemukan');
         }
 
-        if (!$fileField || !Storage::exists($fileField)) {
-            abort(404, 'File tidak ditemukan');
+        if (!$fileField) {
+            abort(404, 'File tidak ditemukan di database');
         }
 
-        return Storage::download($fileField, $fileName);
+        // Coba cek di disk public dulu, lalu local
+        $disk = 'public';
+        if (!Storage::disk($disk)->exists($fileField)) {
+            $disk = 'local';
+            if (!Storage::disk($disk)->exists($fileField)) {
+                abort(404, 'File tidak ditemukan di storage');
+            }
+        }
+
+        return Storage::disk($disk)->download($fileField, $fileName);
     }
 
     /**
@@ -111,19 +120,28 @@ class SkripsiController extends Controller
                 $fileField = $skripsi->file_proposal;
                 break;
             default:
-                abort(404);
+                abort(404, 'Tipe file tidak valid');
         }
 
-        if (!$fileField || !Storage::exists($fileField)) {
-            abort(404, 'File tidak ditemukan');
+        if (!$fileField) {
+            abort(404, 'File tidak ditemukan di database');
         }
 
-        $file = Storage::get($fileField);
-        $mimeType = Storage::mimeType($fileField);
+        // Coba cek di disk public dulu, lalu local
+        $disk = 'public';
+        if (!Storage::disk($disk)->exists($fileField)) {
+            $disk = 'local';
+            if (!Storage::disk($disk)->exists($fileField)) {
+                abort(404, 'File tidak ditemukan di storage: ' . $fileField);
+            }
+        }
+
+        $file = Storage::disk($disk)->get($fileField);
+        $mimeType = Storage::disk($disk)->mimeType($fileField);
         
         return response($file, 200)
             ->header('Content-Type', $mimeType)
-            ->header('Content-Disposition', 'inline');
+            ->header('Content-Disposition', 'inline; filename="' . basename($fileField) . '"');
     }
 
     /**
@@ -147,8 +165,15 @@ class SkripsiController extends Controller
                 return response()->json(['error' => 'Tipe file tidak valid'], 400);
         }
 
-        if ($skripsi->$fileField && Storage::exists($skripsi->$fileField)) {
-            Storage::delete($skripsi->$fileField);
+        if ($skripsi->$fileField) {
+            // Hapus dari kedua disk
+            if (Storage::disk('public')->exists($skripsi->$fileField)) {
+                Storage::disk('public')->delete($skripsi->$fileField);
+            }
+            if (Storage::disk('local')->exists($skripsi->$fileField)) {
+                Storage::disk('local')->delete($skripsi->$fileField);
+            }
+            
             $skripsi->update([$fileField => null]);
             
             return response()->json(['message' => 'File berhasil dihapus']);

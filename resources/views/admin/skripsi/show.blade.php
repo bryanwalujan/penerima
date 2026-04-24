@@ -1,6 +1,6 @@
 {{-- resources/views/admin/skripsi/show.blade.php --}}
 
-@extends('layouts.admin.app')
+@extends('layouts.admin')
 
 @section('title', 'Detail Skripsi - ' . $skripsi->nama_mahasiswa)
 
@@ -71,9 +71,6 @@
                                 @if($skripsi->raw_nip_pembimbing1)
                                     <br><small class="text-muted">NIP: {{ $skripsi->raw_nip_pembimbing1 }}</small>
                                 @endif
-                                @if($skripsi->match_status_pb1)
-                                    <br><span class="badge bg-success">Match: {{ $skripsi->match_status_pb1 }}</span>
-                                @endif
                             </td>
                         </tr>
                         <tr>
@@ -82,9 +79,6 @@
                                 {{ $skripsi->raw_nama_pembimbing2 ?: ($skripsi->dosenPembimbing2->nama ?? '-') }}
                                 @if($skripsi->raw_nip_pembimbing2)
                                     <br><small class="text-muted">NIP: {{ $skripsi->raw_nip_pembimbing2 }}</small>
-                                @endif
-                                @if($skripsi->match_status_pb2)
-                                    <br><span class="badge bg-success">Match: {{ $skripsi->match_status_pb2 }}</span>
                                 @endif
                             </td>
                         </tr>
@@ -96,14 +90,6 @@
                                     <br><small class="text-muted">Pendaftaran ID: {{ $skripsi->pendaftaran_id }}</small>
                                 @endif
                             </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted fw-semibold">Last Synced</td>
-                            <td>{{ $skripsi->last_synced_at ? $skripsi->last_synced_at->format('d F Y H:i:s') : '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted fw-semibold">Created At</td>
-                            <td>{{ $skripsi->created_at->format('d F Y H:i:s') }}</td>
                         </tr>
                     </table>
                 </div>
@@ -138,7 +124,7 @@
                             </div>
                             @if($files['skripsi'])
                                 <div class="mt-2 text-center">
-                                    <a href="{{ route('admin.skripsi.download', [$skripsi, 'skripsi']) }}" 
+                                    <a href="{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => 'skripsi']) }}" 
                                        class="btn btn-sm btn-outline-primary w-100">
                                         <i class="fas fa-download me-1"></i> Download
                                     </a>
@@ -166,7 +152,7 @@
                             </div>
                             @if($files['sk_pembimbing'])
                                 <div class="mt-2 text-center">
-                                    <a href="{{ route('admin.skripsi.download', [$skripsi, 'sk_pembimbing']) }}" 
+                                    <a href="{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => 'sk_pembimbing']) }}" 
                                        class="btn btn-sm btn-outline-primary w-100">
                                         <i class="fas fa-download me-1"></i> Download
                                     </a>
@@ -194,7 +180,7 @@
                             </div>
                             @if($files['proposal'])
                                 <div class="mt-2 text-center">
-                                    <a href="{{ route('admin.skripsi.download', [$skripsi, 'proposal']) }}" 
+                                    <a href="{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => 'proposal']) }}" 
                                        class="btn btn-sm btn-outline-primary w-100">
                                         <i class="fas fa-download me-1"></i> Download
                                     </a>
@@ -213,35 +199,6 @@
             </div>
         </div>
     </div>
-
-    {{-- Match Status --}}
-    @if($skripsi->match_status_pb1 || $skripsi->match_status_pb2)
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white border-bottom py-3">
-            <span class="fw-semibold"><i class="fas fa-handshake me-2 text-primary"></i>Status Pencocokan Dosen</span>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                @if($skripsi->match_status_pb1)
-                <div class="col-md-6">
-                    <div class="alert alert-success mb-0">
-                        <i class="fas fa-check-circle me-2"></i>
-                        <strong>Pembimbing 1:</strong> {{ $skripsi->match_status_pb1 }}
-                    </div>
-                </div>
-                @endif
-                @if($skripsi->match_status_pb2)
-                <div class="col-md-6">
-                    <div class="alert alert-success mb-0">
-                        <i class="fas fa-check-circle me-2"></i>
-                        <strong>Pembimbing 2:</strong> {{ $skripsi->match_status_pb2 }}
-                    </div>
-                </div>
-                @endif
-            </div>
-        </div>
-    </div>
-    @endif
 
 </div>
 
@@ -270,9 +227,15 @@
 
 @section('scripts')
 <script>
+    // PERBAIKAN: Memperbaiki URL untuk preview
     function previewFile(fileType) {
-        const previewUrl = "{{ route('admin.skripsi.preview', [$skripsi, '']) }}/" + fileType;
-        const downloadUrl = "{{ route('admin.skripsi.download', [$skripsi, '']) }}/" + fileType;
+        // Gunakan route helper dengan parameter yang benar
+        const skripsiId = {{ $skripsi->id }};
+        const previewUrl = "{{ route('admin.skripsi.preview', ['skripsi' => $skripsi->id, 'fileType' => '']) }}/" + fileType;
+        const downloadUrl = "{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => '']) }}/" + fileType;
+        
+        console.log('Preview URL:', previewUrl);
+        console.log('Download URL:', downloadUrl);
         
         document.getElementById('pdfPreviewFrame').src = previewUrl;
         document.getElementById('downloadLink').href = downloadUrl;
