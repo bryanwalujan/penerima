@@ -104,11 +104,11 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
+                        {{-- PERBAIKAN: Hanya menampilkan tombol preview jika file tersedia --}}
+                        
                         {{-- File Skripsi --}}
                         <div class="col-md-4">
-                            <div class="card file-card border-0 shadow-sm text-center p-3" 
-                                 onclick="previewFile('skripsi')"
-                                 style="cursor: pointer;">
+                            <div class="card file-card border-0 shadow-sm text-center p-3">
                                 <div class="file-icon">
                                     <i class="fas fa-file-pdf"></i>
                                 </div>
@@ -117,26 +117,24 @@
                                 </div>
                                 @if($files['skripsi'])
                                     <span class="badge bg-success mt-2">Tersedia</span>
-                                    <small class="text-muted mt-1">Klik untuk preview</small>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-primary w-100 mb-1" onclick="previewFile({{ $skripsi->id }}, 'skripsi')">
+                                            <i class="fas fa-eye me-1"></i> Preview
+                                        </button>
+                                        <a href="{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => 'skripsi']) }}" 
+                                           class="btn btn-sm btn-outline-primary w-100">
+                                            <i class="fas fa-download me-1"></i> Download
+                                        </a>
+                                    </div>
                                 @else
                                     <span class="badge bg-secondary mt-2">Tidak tersedia</span>
                                 @endif
                             </div>
-                            @if($files['skripsi'])
-                                <div class="mt-2 text-center">
-                                    <a href="{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => 'skripsi']) }}" 
-                                       class="btn btn-sm btn-outline-primary w-100">
-                                        <i class="fas fa-download me-1"></i> Download
-                                    </a>
-                                </div>
-                            @endif
                         </div>
 
                         {{-- File SK Pembimbing --}}
                         <div class="col-md-4">
-                            <div class="card file-card border-0 shadow-sm text-center p-3"
-                                 onclick="previewFile('sk_pembimbing')"
-                                 style="cursor: pointer;">
+                            <div class="card file-card border-0 shadow-sm text-center p-3">
                                 <div class="file-icon">
                                     <i class="fas fa-file-pdf"></i>
                                 </div>
@@ -145,26 +143,24 @@
                                 </div>
                                 @if($files['sk_pembimbing'])
                                     <span class="badge bg-success mt-2">Tersedia</span>
-                                    <small class="text-muted mt-1">Klik untuk preview</small>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-primary w-100 mb-1" onclick="previewFile({{ $skripsi->id }}, 'sk_pembimbing')">
+                                            <i class="fas fa-eye me-1"></i> Preview
+                                        </button>
+                                        <a href="{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => 'sk_pembimbing']) }}" 
+                                           class="btn btn-sm btn-outline-primary w-100">
+                                            <i class="fas fa-download me-1"></i> Download
+                                        </a>
+                                    </div>
                                 @else
                                     <span class="badge bg-secondary mt-2">Tidak tersedia</span>
                                 @endif
                             </div>
-                            @if($files['sk_pembimbing'])
-                                <div class="mt-2 text-center">
-                                    <a href="{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => 'sk_pembimbing']) }}" 
-                                       class="btn btn-sm btn-outline-primary w-100">
-                                        <i class="fas fa-download me-1"></i> Download
-                                    </a>
-                                </div>
-                            @endif
                         </div>
 
                         {{-- File Proposal --}}
                         <div class="col-md-4">
-                            <div class="card file-card border-0 shadow-sm text-center p-3"
-                                 onclick="previewFile('proposal')"
-                                 style="cursor: pointer;">
+                            <div class="card file-card border-0 shadow-sm text-center p-3">
                                 <div class="file-icon">
                                     <i class="fas fa-file-pdf"></i>
                                 </div>
@@ -173,19 +169,19 @@
                                 </div>
                                 @if($files['proposal'])
                                     <span class="badge bg-success mt-2">Tersedia</span>
-                                    <small class="text-muted mt-1">Klik untuk preview</small>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-primary w-100 mb-1" onclick="previewFile({{ $skripsi->id }}, 'proposal')">
+                                            <i class="fas fa-eye me-1"></i> Preview
+                                        </button>
+                                        <a href="{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => 'proposal']) }}" 
+                                           class="btn btn-sm btn-outline-primary w-100">
+                                            <i class="fas fa-download me-1"></i> Download
+                                        </a>
+                                    </div>
                                 @else
                                     <span class="badge bg-secondary mt-2">Tidak tersedia</span>
                                 @endif
                             </div>
-                            @if($files['proposal'])
-                                <div class="mt-2 text-center">
-                                    <a href="{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => 'proposal']) }}" 
-                                       class="btn btn-sm btn-outline-primary w-100">
-                                        <i class="fas fa-download me-1"></i> Download
-                                    </a>
-                                </div>
-                            @endif
                         </div>
                     </div>
 
@@ -227,20 +223,21 @@
 
 @section('scripts')
 <script>
-    // PERBAIKAN: Memperbaiki URL untuk preview
-    function previewFile(fileType) {
-        // Gunakan route helper dengan parameter yang benar
-        const skripsiId = {{ $skripsi->id }};
-        const previewUrl = "{{ route('admin.skripsi.preview', ['skripsi' => $skripsi->id, 'fileType' => '']) }}/" + fileType;
-        const downloadUrl = "{{ route('admin.skripsi.download', ['skripsi' => $skripsi->id, 'fileType' => '']) }}/" + fileType;
+    // PERBAIKAN: Fungsi preview dengan parameter yang benar
+    function previewFile(skripsiId, fileType) {
+        // Buat URL secara manual menggunakan base URL
+        const previewUrl = `/admin/skripsi/${skripsiId}/preview/${fileType}`;
+        const downloadUrl = `/admin/skripsi/${skripsiId}/download/${fileType}`;
         
         console.log('Preview URL:', previewUrl);
-        console.log('Download URL:', downloadUrl);
         
+        // Set iframe source
         document.getElementById('pdfPreviewFrame').src = previewUrl;
         document.getElementById('downloadLink').href = downloadUrl;
         
-        new bootstrap.Modal(document.getElementById('pdfPreviewModal')).show();
+        // Tampilkan modal
+        const modal = new bootstrap.Modal(document.getElementById('pdfPreviewModal'));
+        modal.show();
     }
 </script>
 @endsection
