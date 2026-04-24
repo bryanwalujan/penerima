@@ -2,179 +2,175 @@
 
 @extends('layouts.admin.app')
 
-@section('title', 'Detail File Skripsi - ' . $skripsi->nama_mahasiswa)
+@section('title', 'Skripsi Bimbingan - ' . $dosen->nama)
 
 @section('content')
-<div class="container-fluid px-4">
-    {{-- Breadcrumb --}}
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('admin.file.skripsi.index') }}">File Skripsi</a></li>
-            <li class="breadcrumb-item active">Detail</li>
-        </ol>
-    </nav>
-
-    {{-- Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="mb-6">
+    <div class="flex items-center justify-between">
         <div>
-            <a href="{{ route('admin.file.skripsi.index') }}" class="btn btn-sm btn-outline-secondary mb-3">
-                <i class="fas fa-arrow-left me-1"></i> Kembali
+            <a href="{{ route('admin.file.skripsi.index') }}" class="text-blue-600 hover:text-blue-800 mb-2 inline-block">
+                <i class="fas fa-arrow-left mr-1"></i> Kembali
             </a>
-            <h4 class="fw-bold mb-1">
-                <i class="fas fa-file-pdf text-danger me-2"></i>Detail File Skripsi
-            </h4>
-            <p class="text-muted mb-0">Informasi lengkap dan file skripsi mahasiswa</p>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-user-tie text-blue-600 mr-2"></i>Skripsi Bimbingan - {{ $dosen->nama }}
+            </h1>
+            <p class="text-gray-600 mt-1">Daftar mahasiswa bimbingan skripsi</p>
+        </div>
+        <div class="bg-blue-100 rounded-lg px-4 py-2">
+            <span class="text-blue-800 font-semibold">Total: {{ $skripsiList->count() }} Mahasiswa</span>
         </div>
     </div>
+</div>
 
-    <div class="row">
-        {{-- Informasi Mahasiswa --}}
-        <div class="col-lg-5 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <span class="fw-semibold">
-                        <i class="fas fa-user-graduate me-2 text-primary"></i>Informasi Mahasiswa
-                    </span>
-                </div>
-                <div class="card-body">
-                    <table class="table table-borderless mb-0">
-                        <tr>
-                            <td class="text-muted fw-semibold" style="width: 140px">Nama Lengkap</td>
-                            <td class="fw-semibold">{{ $skripsi->nama_mahasiswa }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted fw-semibold">NIM</td>
-                            <td><code>{{ $skripsi->nim ?: '-' }}</code></td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted fw-semibold">Angkatan</td>
-                            <td>{{ $skripsi->angkatan ?: '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted fw-semibold">Judul Skripsi</td>
-                            <td class="text-wrap">{{ $skripsi->judul_skripsi }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted fw-semibold">Pembimbing 1</td>
-                            <td>{{ $skripsi->raw_nama_pembimbing1 ?: ($skripsi->dosenPembimbing1->nama ?? '-') }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted fw-semibold">Pembimbing 2</td>
-                            <td>{{ $skripsi->raw_nama_pembimbing2 ?: ($skripsi->dosenPembimbing2->nama ?? '-') }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted fw-semibold">Sumber Data</td>
-                            <td>
-                                <span class="badge {{ $skripsi->source == 'presma' ? 'bg-primary' : 'bg-secondary' }}">
-                                    {{ $skripsi->source ?: 'manual' }}
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted fw-semibold">Sync Terakhir</td>
-                            <td>{{ $skripsi->last_synced_at ? $skripsi->last_synced_at->format('d F Y H:i:s') : '-' }}</td>
-                        </tr>
-                    </table>
-                </div>
+{{-- Info Dosen --}}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-500 bg-opacity-75">
+                <i class="fas fa-id-card text-white"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">NIDN</p>
+                <p class="font-semibold">{{ $dosen->nidn ?: '-' }}</p>
             </div>
         </div>
-
-        {{-- File Preview --}}
-        <div class="col-lg-7 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <span class="fw-semibold">
-                        <i class="fas fa-file-pdf text-danger me-2"></i>Preview File Skripsi
-                    </span>
-                </div>
-                <div class="card-body">
-                    @if($fileExists)
-                        <div class="text-center mb-4">
-                            <div class="file-icon mb-3">
-                                <i class="fas fa-file-pdf text-danger" style="font-size: 5rem;"></i>
-                            </div>
-                            <h5>{{ $skripsi->nama_mahasiswa }} - Skripsi</h5>
-                            <p class="text-muted small">
-                                File skripsi lengkap mahasiswa a.n. <strong>{{ $skripsi->nama_mahasiswa }}</strong>
-                            </p>
-                        </div>
-
-                        <div class="d-flex justify-content-center gap-3 mb-4">
-                            <button type="button" class="btn btn-primary px-4" onclick="previewPDF()">
-                                <i class="fas fa-eye me-2"></i> Preview Fullscreen
-                            </button>
-                            <a href="{{ route('admin.file.skripsi.download', $skripsi) }}" class="btn btn-outline-primary px-4">
-                                <i class="fas fa-download me-2"></i> Download File
-                            </a>
-                        </div>
-
-                        {{-- Embedded PDF Preview --}}
-                        <div class="border rounded-3 overflow-hidden" style="background: #f8f9fa;">
-                            <div class="ratio ratio-16x9">
-                                <iframe src="{{ route('admin.file.skripsi.preview', $skripsi) }}" 
-                                        style="border: none; width: 100%; height: 500px;"
-                                        class="rounded-3">
-                                </iframe>
-                            </div>
-                        </div>
-                        
-                        <div class="file-info mt-3 p-3 bg-light rounded-3">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i> 
-                                File ditampilkan dalam mode preview. Klik tombol Preview Fullscreen untuk melihat dalam ukuran penuh, 
-                                atau Download untuk menyimpan file ke komputer.
-                            </small>
-                        </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="fas fa-file-pdf fa-4x text-muted mb-3"></i>
-                            <h5 class="text-muted">File Tidak Ditemukan</h5>
-                            <p class="text-muted small mb-0">
-                                File skripsi tidak tersedia atau telah dihapus dari storage.
-                            </p>
-                        </div>
-                    @endif
-                </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-500 bg-opacity-75">
+                <i class="fas fa-envelope text-white"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Email</p>
+                <p class="font-semibold">{{ $dosen->email ?: '-' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-500 bg-opacity-75">
+                <i class="fas fa-chalkboard-user text-white"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Jabatan</p>
+                <p class="font-semibold">{{ $dosen->jabatan ?: '-' }}</p>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Modal Fullscreen PDF --}}
-<div class="modal fade" id="pdfModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title">
-                    <i class="fas fa-file-pdf text-danger me-2"></i>
-                    {{ $skripsi->nama_mahasiswa }} - Skripsi
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+{{-- Daftar Mahasiswa Bimbingan --}}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="p-4 border-b">
+        <h3 class="text-lg font-semibold text-gray-800">
+            <i class="fas fa-users text-blue-600 mr-2"></i> Daftar Mahasiswa Bimbingan
+        </h3>
+    </div>
+    <div class="p-4 overflow-x-auto">
+        <table class="w-full min-w-max">
+            <thead>
+                <tr class="bg-gray-100 text-gray-700">
+                    <th class="py-3 px-4 text-left rounded-tl-lg">No</th>
+                    <th class="py-3 px-4 text-left">Nama Mahasiswa</th>
+                    <th class="py-3 px-4 text-left">NIM</th>
+                    <th class="py-3 px-4 text-left">Judul Skripsi</th>
+                    <th class="py-3 px-4 text-left">Peran</th>
+                    <th class="py-3 px-4 text-center rounded-tr-lg">File Skripsi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php $no = 1; @endphp
+                @foreach($skripsiList as $item)
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="py-3 px-4">{{ $no++ }}</td>
+                    <td class="py-3 px-4 font-medium">{{ $item->nama_mahasiswa }}</td>
+                    <td class="py-3 px-4"><code>{{ $item->nim ?: '-' }}</code></td>
+                    <td class="py-3 px-4">
+                        <div class="max-w-sm truncate" title="{{ $item->judul_skripsi }}">
+                            {{ Str::limit($item->judul_skripsi, 60) }}
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        @php
+                            $role = '';
+                            if($dosen->id == $item->dosen_pembimbing1_id) $role = 'Pembimbing 1';
+                            if($dosen->id == $item->dosen_pembimbing2_id) $role = 'Pembimbing 2';
+                        @endphp
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <i class="fas fa-chalkboard-user mr-1"></i> {{ $role }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex justify-center space-x-3">
+                            <button onclick="previewFile('{{ route('admin.file.skripsi.preview', $item) }}', '{{ $item->nama_mahasiswa }}')" 
+                                    class="text-red-600 hover:text-red-800" title="Preview">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <a href="{{ route('admin.file.skripsi.download', $item) }}" 
+                               class="text-green-600 hover:text-green-800" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        
+        @if($skripsiList->isEmpty())
+            <div class="text-center py-8">
+                <i class="fas fa-folder-open fa-4x text-gray-300 mb-3"></i>
+                <p class="text-gray-500">Belum ada file skripsi untuk dosen ini.</p>
             </div>
-            <div class="modal-body p-0">
-                <iframe id="fullscreenPdf" src="" style="width: 100%; height: calc(100vh - 60px); border: none;"></iframe>
-            </div>
-            <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-1"></i> Tutup
+        @endif
+    </div>
+</div>
+
+{{-- Modal Preview PDF --}}
+<div id="pdfModal" class="modal hidden fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50">
+    <div class="relative w-full max-w-6xl mx-auto mt-10 mb-10">
+        <div class="bg-white rounded-lg shadow-lg">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-lg font-semibold" id="modalTitle">
+                    <i class="fas fa-file-pdf text-red-600 mr-2"></i>Preview File Skripsi
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
                 </button>
-                <a href="{{ route('admin.file.skripsi.download', $skripsi) }}" class="btn btn-primary">
-                    <i class="fas fa-download me-1"></i> Download
+            </div>
+            <div class="p-4">
+                <iframe id="pdfIframe" src="" style="width: 100%; height: 70vh; border: none;"></iframe>
+            </div>
+            <div class="flex justify-end p-4 border-t">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 mr-2">
+                    Tutup
+                </button>
+                <a href="#" id="downloadLink" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <i class="fas fa-download mr-1"></i> Download
                 </a>
             </div>
         </div>
     </div>
 </div>
 
-@endsection
-
-@section('scripts')
 <script>
-    function previewPDF() {
-        const previewUrl = "{{ route('admin.file.skripsi.preview', $skripsi) }}";
-        document.getElementById('fullscreenPdf').src = previewUrl;
-        new bootstrap.Modal(document.getElementById('pdfModal')).show();
+    function previewFile(previewUrl, namaMahasiswa) {
+        document.getElementById('pdfIframe').src = previewUrl;
+        document.getElementById('downloadLink').href = previewUrl.replace('/preview/', '/download/');
+        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-file-pdf text-red-600 mr-2"></i>Preview Skripsi - ' + namaMahasiswa;
+        document.getElementById('pdfModal').classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        document.getElementById('pdfModal').classList.add('hidden');
+        document.getElementById('pdfIframe').src = '';
+    }
+    
+    window.onclick = function(event) {
+        let modal = document.getElementById('pdfModal');
+        if (event.target == modal) {
+            closeModal();
+        }
     }
 </script>
 @endsection

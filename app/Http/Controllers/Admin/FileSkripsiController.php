@@ -4,6 +4,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Dosen;
 use App\Models\Skripsi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -11,49 +12,42 @@ use Illuminate\Support\Facades\Storage;
 class FileSkripsiController extends Controller
 {
     /**
-     * Menampilkan daftar skripsi yang memiliki file skripsi
+     * Menampilkan daftar skripsi per dosen pembimbing
      */
     public function index(Request $request)
     {
-        $query = Skripsi::with(['dosenPembimbing1', 'dosenPembimbing2'])
-            ->whereNotNull('file_skripsi')
-            ->latest('created_at');
-
-        // Filter pencarian
-        if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_mahasiswa', 'like', "%{$search}%")
-                  ->orWhere('nim', 'like', "%{$search}%")
-                  ->orWhere('judul_skripsi', 'like', "%{$search}%");
-            });
-        }
-
-        $skripsiList = $query->paginate(15)->withQueryString();
+        $dosens = Dosen::with(['skripsiSebagaiPembimbing1', 'skripsiSebagaiPembimbing2'])
+            ->whereHas('skripsiSebagaiPembimbing1', function($q) {
+                $q->whereNotNull('file_skripsi');
+            })
+            ->orWhereHas('skripsiSebagaiPembimbing2', function($q) {
+                $q->whereNotNull('file_skripsi');
+            })
+            ->get();
 
         $stats = [
-            'total' => Skripsi::whereNotNull('file_skripsi')->count(),
+            'total_dosen' => $dosens->count(),
+            'total_skripsi' => Skripsi::whereNotNull('file_skripsi')->count(),
             'from_presma' => Skripsi::whereNotNull('file_skripsi')->where('source', 'presma')->count(),
-            'synced_today' => Skripsi::whereNotNull('file_skripsi')->whereDate('last_synced_at', today())->count(),
         ];
 
-        return view('admin.file.skripsi.index', compact('skripsiList', 'stats'));
+        return view('admin.file.skripsi.index', compact('dosens', 'stats'));
     }
 
     /**
-     * Detail file skripsi
+     * Detail skripsi per dosen
      */
-    public function show(Skripsi $skripsi)
+    public function show(Dosen $dosen)
     {
-        if (!$skripsi->file_skripsi) {
-            abort(404, 'File skripsi tidak ditemukan');
-        }
+        $dosen->load(['skripsiSebagaiPembimbing1' => function($q) {
+            $q->whereNotNull('file_skripsi');
+        }, 'skripsiSebagaiPembimbing2' => function($q) {
+            $q->whereNotNull('file_skripsi');
+        }]);
 
-        $skripsi->load(['dosenPembimbing1', 'dosenPembimbing2']);
-        
-        $fileExists = Storage::disk('local')->exists($skripsi->file_skripsi) || 
-                      Storage::disk('public')->exists($skripsi->file_skripsi);
+        $skripsiList = $dosen->skripsiSebagaiPembimbing1->merge($dosen->skripsiSebagaiPembimbing2);
 
-        return view('admin.file.skripsi.show', compact('skripsi', 'fileExists'));
+        return view('admin.file.skripsi.show', compact('dosen', 'skripsiList'));
     }
 
     /**

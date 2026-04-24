@@ -79,9 +79,9 @@ Route::prefix('admin')->group(function () {
     // File Skripsi Routes
     Route::prefix('file/skripsi')->name('admin.file.skripsi.')->group(function () {
         Route::get('/', [FileSkripsiController::class, 'index'])->name('index');
-        Route::get('/{skripsi}', [FileSkripsiController::class, 'show'])->name('show');
-        Route::get('/{skripsi}/preview', [FileSkripsiController::class, 'preview'])->name('preview');
-        Route::get('/{skripsi}/download', [FileSkripsiController::class, 'download'])->name('download');
+        Route::get('/dosen/{dosen}', [FileSkripsiController::class, 'show'])->name('dosen');
+        Route::get('/preview/{skripsi}', [FileSkripsiController::class, 'preview'])->name('preview');
+        Route::get('/download/{skripsi}', [FileSkripsiController::class, 'download'])->name('download');
     });
     
     // File SK Pembimbing Routes
