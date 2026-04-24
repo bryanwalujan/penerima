@@ -33,11 +33,13 @@ class Skripsi extends Model
         'last_synced_at' => 'datetime',
     ];
 
+    // Relasi ke dosen pembimbing 1
     public function dosenPembimbing1()
     {
         return $this->belongsTo(Dosen::class, 'dosen_pembimbing1_id');
     }
 
+    // Relasi ke dosen pembimbing 2
     public function dosenPembimbing2()
     {
         return $this->belongsTo(Dosen::class, 'dosen_pembimbing2_id');
@@ -49,7 +51,7 @@ class Skripsi extends Model
         $judul = preg_replace('/[^a-zA-Z0-9\s]/', '', $this->judul_skripsi);
 
         $nama  = str_replace(' ', '_', trim($nama));
-        $judul = implode('_', array_slice(explode(' ', trim($judul)), 0, 5)); // 5 kata pertama
+        $judul = implode('_', array_slice(explode(' ', trim($judul)), 0, 5));
 
         return "{$nama}_{$judul}";
     }

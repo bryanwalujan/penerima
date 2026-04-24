@@ -16,13 +16,18 @@ class FileSkripsiController extends Controller
      */
     public function index(Request $request)
     {
-        $dosens = Dosen::with(['skripsiSebagaiPembimbing1', 'skripsiSebagaiPembimbing2'])
-            ->whereHas('skripsiSebagaiPembimbing1', function($q) {
+        // Ambil dosen yang memiliki file skripsi (baik sebagai pembimbing 1 atau 2)
+        $dosens = Dosen::whereHas('skripsiSebagaiPembimbing1', function($q) {
                 $q->whereNotNull('file_skripsi');
             })
             ->orWhereHas('skripsiSebagaiPembimbing2', function($q) {
                 $q->whereNotNull('file_skripsi');
             })
+            ->with(['skripsiSebagaiPembimbing1' => function($q) {
+                $q->whereNotNull('file_skripsi');
+            }, 'skripsiSebagaiPembimbing2' => function($q) {
+                $q->whereNotNull('file_skripsi');
+            }])
             ->get();
 
         $stats = [
@@ -59,14 +64,16 @@ class FileSkripsiController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('local')->exists($skripsi->file_skripsi) ? 'local' : 'public';
-        
-        if (!Storage::disk($disk)->exists($skripsi->file_skripsi)) {
+        // Cek di disk local dan public
+        if (Storage::disk('local')->exists($skripsi->file_skripsi)) {
+            $file = Storage::disk('local')->get($skripsi->file_skripsi);
+            $mimeType = Storage::disk('local')->mimeType($skripsi->file_skripsi);
+        } elseif (Storage::disk('public')->exists($skripsi->file_skripsi)) {
+            $file = Storage::disk('public')->get($skripsi->file_skripsi);
+            $mimeType = Storage::disk('public')->mimeType($skripsi->file_skripsi);
+        } else {
             abort(404);
         }
-
-        $file = Storage::disk($disk)->get($skripsi->file_skripsi);
-        $mimeType = Storage::disk($disk)->mimeType($skripsi->file_skripsi);
         
         return response($file, 200)
             ->header('Content-Type', $mimeType)
@@ -82,9 +89,12 @@ class FileSkripsiController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('local')->exists($skripsi->file_skripsi) ? 'local' : 'public';
-        
-        if (!Storage::disk($disk)->exists($skripsi->file_skripsi)) {
+        // Cek di disk local dan public
+        if (Storage::disk('local')->exists($skripsi->file_skripsi)) {
+            $disk = 'local';
+        } elseif (Storage::disk('public')->exists($skripsi->file_skripsi)) {
+            $disk = 'public';
+        } else {
             abort(404);
         }
 
