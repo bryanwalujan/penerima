@@ -13,23 +13,6 @@ class SkripsiSyncService
 {
     /**
      * Entry point — proses satu payload sync dari e-service.
-     *
-     * Payload yang diharapkan:
-     * {
-     *   "source": "presma",
-     *   "pendaftaran_id": "123",
-     *   "mahasiswa": { "nama": "...", "nim": "...", "angkatan": "..." },
-     *   "judul_skripsi": "...",
-     *   "dosen_list": [
-     *     { "nama": "...", "nip": "...", "nidn": "...", "role": "pembimbing_1" },
-     *     { "nama": "...", "nip": "...", "nidn": "...", "role": "pembimbing_2" }
-     *   ],
-     *   "files": {
-     *     "skripsi":        "base64...",
-     *     "sk_pembimbing":  "base64...",
-     *     "proposal":       "base64..."
-     *   }
-     * }
      */
     public function process(array $payload): array
     {
@@ -39,6 +22,7 @@ class SkripsiSyncService
         $filesBase64 = $payload['files']          ?? [];
         $source      = $payload['source']         ?? 'presma';
         $pendaftaranId = (string) ($payload['pendaftaran_id'] ?? '');
+        $folderNameFromPayload = $payload['folder_name'] ?? null; // Ambil folder_name jika dikirim
 
         // --- 1. Resolve dosen ---
         $resolved = $this->resolveDosenList($dosenList);
@@ -67,8 +51,14 @@ class SkripsiSyncService
             ]
         );
 
-        // --- 3. Simpan file ---
-        $savedFiles = $this->saveFiles($skripsi, $filesBase64);
+        // Jika folder_name dikirim dari payload, gunakan itu
+        if ($folderNameFromPayload) {
+            $skripsi->folder_name = $folderNameFromPayload;
+            $skripsi->save();
+        }
+
+        // --- 3. Simpan file ke folder terpisah ---
+        $savedFiles = $this->saveFilesToSeparateFolders($skripsi, $filesBase64);
 
         // Update path file ke DB
         $skripsi->update(array_filter([
@@ -80,6 +70,7 @@ class SkripsiSyncService
         Log::info('[SkripsiSync] Record skripsi disimpan', [
             'skripsi_id'    => $skripsi->id,
             'pendaftaran_id'=> $pendaftaranId,
+            'folder_name'   => $skripsi->folder_name,
             'match_pb1'     => $resolved['pembimbing_1']['status'],
             'match_pb2'     => $resolved['pembimbing_2']['status'],
             'files_saved'   => array_keys(array_filter($savedFiles)),
@@ -98,8 +89,103 @@ class SkripsiSyncService
     }
 
     /**
+     * Simpan file ke folder yang terpisah: skripsi/, sk_pembimbing/, proposal/
+     * 
+     * Mendukung 2 format payload:
+     * 1. Format lama: files['skripsi'] = "base64string..."
+     * 2. Format baru: files['skripsi'] = [
+     *      'content' => 'base64...',
+     *      'folder' => 'skripsi',
+     *      'filename' => 'Skripsi.pdf'
+     *    ]
+     */
+    private function saveFilesToSeparateFolders(Skripsi $skripsi, array $filesBase64): array
+    {
+        $saved  = [];
+        $slug   = Str::slug($skripsi->folder_name);
+        
+        // Mapping default untuk setiap jenis file
+        $defaultMap = [
+            'skripsi' => [
+                'folder' => 'skripsi',
+                'filename' => 'Skripsi.pdf',
+                'label' => 'Skripsi'
+            ],
+            'sk_pembimbing' => [
+                'folder' => 'sk_pembimbing',
+                'filename' => 'SK_Pembimbing.pdf',
+                'label' => 'SK_Pembimbing'
+            ],
+            'proposal' => [
+                'folder' => 'proposal',
+                'filename' => 'Proposal.pdf',
+                'label' => 'Proposal'
+            ],
+        ];
+
+        foreach ($defaultMap as $fileKey => $config) {
+            $fileData = $filesBase64[$fileKey] ?? null;
+            
+            if (!$fileData) {
+                Log::info("[SkripsiSync] File {$fileKey} tidak ada dalam payload");
+                continue;
+            }
+
+            // Cek format: apakah fileData berupa array (format baru) atau string (format lama)
+            $isNewFormat = is_array($fileData) && isset($fileData['content']);
+            $base64 = null;
+            $targetFolder = $config['folder'];
+            $targetFilename = $config['filename'];
+
+            if ($isNewFormat) {
+                // Format baru: files[$key] = ['content' => 'base64...', 'folder' => '...', 'filename' => '...']
+                $base64 = $fileData['content'] ?? null;
+                $targetFolder = $fileData['folder'] ?? $config['folder'];
+                $targetFilename = $fileData['filename'] ?? $config['filename'];
+                
+                Log::info("[SkripsiSync] Menggunakan format baru untuk {$fileKey}", [
+                    'folder' => $targetFolder,
+                    'filename' => $targetFilename,
+                    'size' => $fileData['size'] ?? 'unknown'
+                ]);
+            } else {
+                // Format lama: files[$key] = "base64string..."
+                $base64 = $fileData;
+                Log::info("[SkripsiSync] Menggunakan format lama untuk {$fileKey}");
+            }
+
+            if (!$base64) {
+                Log::warning("[SkripsiSync] Base64 content kosong untuk {$fileKey}");
+                continue;
+            }
+
+            try {
+                $decoded = base64_decode($base64, strict: true);
+                if ($decoded === false) {
+                    Log::warning("[SkripsiSync] Base64 decode gagal untuk {$fileKey}");
+                    continue;
+                }
+
+                // Buat path: {folder}/{slug}/{filename}
+                $path = "{$targetFolder}/{$slug}/{$targetFilename}";
+
+                // Simpan ke disk 'local' → storage/app/private/
+                Storage::disk('local')->put($path, $decoded);
+
+                $saved[$fileKey] = $path;
+
+                Log::info("[SkripsiSync] File tersimpan: {$path} (Size: " . strlen($decoded) . " bytes)");
+
+            } catch (\Exception $e) {
+                Log::error("[SkripsiSync] Gagal simpan file {$fileKey}: " . $e->getMessage());
+            }
+        }
+
+        return $saved;
+    }
+
+    /**
      * Resolve dosen dari dosen_list berdasarkan role.
-     * Return: array dengan key 'pembimbing_1' dan 'pembimbing_2'.
      */
     private function resolveDosenList(array $dosenList): array
     {
@@ -130,13 +216,10 @@ class SkripsiSyncService
     }
 
     /**
-     * Matching dosen:
-     * 1. Case-insensitive exact match pada kolom `nama`
-     * 2. Fallback ke NIP jika nama tidak cocok
+     * Matching dosen.
      */
     private function matchDosen(?string $nama, ?string $nip): ?Dosen
     {
-        // Step 1: match by nama (case-insensitive exact)
         if ($nama) {
             $dosen = Dosen::whereRaw('LOWER(nama) = ?', [strtolower(trim($nama))])->first();
             if ($dosen) {
@@ -145,7 +228,6 @@ class SkripsiSyncService
             }
         }
 
-        // Step 2: fallback ke NIP
         if ($nip) {
             $dosen = Dosen::whereRaw('LOWER(nip) = ?', [strtolower(trim($nip))])->first();
             if ($dosen) {
@@ -156,49 +238,5 @@ class SkripsiSyncService
 
         Log::warning('[SkripsiSync] Dosen tidak ditemukan', ['nama' => $nama, 'nip' => $nip]);
         return null;
-    }
-
-    /**
-     * Simpan file base64 ke storage/app/private/{folder}/
-     * Return: array path relatif yang tersimpan.
-     */
-    private function saveFiles(Skripsi $skripsi, array $filesBase64): array
-    {
-        $saved  = [];
-        $folder = 'skripsi/' . Str::slug($skripsi->folder_name);
-
-        $map = [
-            'skripsi'       => ['key' => 'skripsi',       'ext' => 'pdf', 'label' => 'Skripsi'],
-            'sk_pembimbing' => ['key' => 'sk_pembimbing', 'ext' => 'pdf', 'label' => 'SK_Pembimbing'],
-            'proposal'      => ['key' => 'proposal',      'ext' => 'pdf', 'label' => 'Proposal'],
-        ];
-
-        foreach ($map as $fileKey => $meta) {
-            $base64 = $filesBase64[$fileKey] ?? null;
-            if (!$base64) continue;
-
-            try {
-                $decoded = base64_decode($base64, strict: true);
-                if ($decoded === false) {
-                    Log::warning("[SkripsiSync] Base64 decode gagal untuk {$fileKey}");
-                    continue;
-                }
-
-                // Path: skripsi/{folder}/{Label}.pdf
-                $path = "{$folder}/{$meta['label']}.{$meta['ext']}";
-
-                // Simpan ke disk 'local' → storage/app/private/
-                Storage::disk('local')->put($path, $decoded);
-
-                $saved[$fileKey] = $path;
-
-                Log::info("[SkripsiSync] File tersimpan: {$path}");
-
-            } catch (\Exception $e) {
-                Log::error("[SkripsiSync] Gagal simpan file {$fileKey}: " . $e->getMessage());
-            }
-        }
-
-        return $saved;
     }
 }

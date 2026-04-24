@@ -258,4 +258,33 @@ class SkripsiController extends Controller
         
         return null;
     }
+    
+    /**
+ * Helper: Get full storage path for a file
+ */
+private function getFileStoragePath($filePath)
+{
+    if (!$filePath) {
+        return null;
+    }
+    
+    // Cek di berbagai kemungkinan folder
+    $possiblePaths = [
+        $filePath, // full path
+        'skripsi/' . $filePath,
+        'sk_pembimbing/' . $filePath,
+        'proposal/' . $filePath,
+    ];
+    
+    foreach ($possiblePaths as $path) {
+        if (Storage::disk('local')->exists($path)) {
+            return ['disk' => 'local', 'path' => $path];
+        }
+        if (Storage::disk('public')->exists($path)) {
+            return ['disk' => 'public', 'path' => $path];
+        }
+    }
+    
+    return null;
+}
 } 
