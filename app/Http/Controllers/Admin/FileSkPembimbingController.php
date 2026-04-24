@@ -4,6 +4,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Dosen;
 use App\Models\Skripsi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,39 +13,34 @@ class FileSkPembimbingController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Skripsi::with(['dosenPembimbing1', 'dosenPembimbing2'])
-            ->whereNotNull('file_sk_pembimbing')
-            ->latest('created_at');
-
-        if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_mahasiswa', 'like', "%{$search}%")
-                  ->orWhere('nim', 'like', "%{$search}%");
-            });
-        }
-
-        $skripsiList = $query->paginate(15)->withQueryString();
+        $dosens = Dosen::whereHas('skPembimbingSebagaiPembimbing1', function($q) {
+                $q->whereNotNull('file_sk_pembimbing');
+            })
+            ->orWhereHas('skPembimbingSebagaiPembimbing2', function($q) {
+                $q->whereNotNull('file_sk_pembimbing');
+            })
+            ->with(['skPembimbingSebagaiPembimbing1', 'skPembimbingSebagaiPembimbing2'])
+            ->get();
 
         $stats = [
-            'total' => Skripsi::whereNotNull('file_sk_pembimbing')->count(),
+            'total_dosen' => $dosens->count(),
+            'total_sk' => Skripsi::whereNotNull('file_sk_pembimbing')->count(),
             'from_presma' => Skripsi::whereNotNull('file_sk_pembimbing')->where('source', 'presma')->count(),
         ];
 
-        return view('admin.file.sk-pembimbing.index', compact('skripsiList', 'stats'));
+        return view('admin.file.sk-pembimbing.index', compact('dosens', 'stats'));
     }
 
-    public function show(Skripsi $skripsi)
+    public function show(Dosen $dosen)
     {
-        if (!$skripsi->file_sk_pembimbing) {
-            abort(404, 'File SK Pembimbing tidak ditemukan');
-        }
+        $dosen->load([
+            'skPembimbingSebagaiPembimbing1', 
+            'skPembimbingSebagaiPembimbing2'
+        ]);
 
-        $skripsi->load(['dosenPembimbing1', 'dosenPembimbing2']);
-        
-        $fileExists = Storage::disk('local')->exists($skripsi->file_sk_pembimbing) || 
-                      Storage::disk('public')->exists($skripsi->file_sk_pembimbing);
+        $skripsiList = $dosen->skPembimbingSebagaiPembimbing1->merge($dosen->skPembimbingSebagaiPembimbing2);
 
-        return view('admin.file.sk-pembimbing.show', compact('skripsi', 'fileExists'));
+        return view('admin.file.sk-pembimbing.show', compact('dosen', 'skripsiList'));
     }
 
     public function preview(Skripsi $skripsi)
@@ -53,14 +49,15 @@ class FileSkPembimbingController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('local')->exists($skripsi->file_sk_pembimbing) ? 'local' : 'public';
-        
-        if (!Storage::disk($disk)->exists($skripsi->file_sk_pembimbing)) {
+        if (Storage::disk('local')->exists($skripsi->file_sk_pembimbing)) {
+            $file = Storage::disk('local')->get($skripsi->file_sk_pembimbing);
+            $mimeType = Storage::disk('local')->mimeType($skripsi->file_sk_pembimbing);
+        } elseif (Storage::disk('public')->exists($skripsi->file_sk_pembimbing)) {
+            $file = Storage::disk('public')->get($skripsi->file_sk_pembimbing);
+            $mimeType = Storage::disk('public')->mimeType($skripsi->file_sk_pembimbing);
+        } else {
             abort(404);
         }
-
-        $file = Storage::disk($disk)->get($skripsi->file_sk_pembimbing);
-        $mimeType = Storage::disk($disk)->mimeType($skripsi->file_sk_pembimbing);
         
         return response($file, 200)
             ->header('Content-Type', $mimeType)
@@ -73,9 +70,11 @@ class FileSkPembimbingController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('local')->exists($skripsi->file_sk_pembimbing) ? 'local' : 'public';
-        
-        if (!Storage::disk($disk)->exists($skripsi->file_sk_pembimbing)) {
+        if (Storage::disk('local')->exists($skripsi->file_sk_pembimbing)) {
+            $disk = 'local';
+        } elseif (Storage::disk('public')->exists($skripsi->file_sk_pembimbing)) {
+            $disk = 'public';
+        } else {
             abort(404);
         }
 

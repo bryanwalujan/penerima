@@ -4,6 +4,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Dosen;
 use App\Models\Skripsi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,39 +13,34 @@ class FileProposalController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Skripsi::with(['dosenPembimbing1', 'dosenPembimbing2'])
-            ->whereNotNull('file_proposal')
-            ->latest('created_at');
-
-        if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_mahasiswa', 'like', "%{$search}%")
-                  ->orWhere('nim', 'like', "%{$search}%");
-            });
-        }
-
-        $skripsiList = $query->paginate(15)->withQueryString();
+        $dosens = Dosen::whereHas('proposalSebagaiPembimbing1', function($q) {
+                $q->whereNotNull('file_proposal');
+            })
+            ->orWhereHas('proposalSebagaiPembimbing2', function($q) {
+                $q->whereNotNull('file_proposal');
+            })
+            ->with(['proposalSebagaiPembimbing1', 'proposalSebagaiPembimbing2'])
+            ->get();
 
         $stats = [
-            'total' => Skripsi::whereNotNull('file_proposal')->count(),
+            'total_dosen' => $dosens->count(),
+            'total_proposal' => Skripsi::whereNotNull('file_proposal')->count(),
             'from_presma' => Skripsi::whereNotNull('file_proposal')->where('source', 'presma')->count(),
         ];
 
-        return view('admin.file.proposal.index', compact('skripsiList', 'stats'));
+        return view('admin.file.proposal.index', compact('dosens', 'stats'));
     }
 
-    public function show(Skripsi $skripsi)
+    public function show(Dosen $dosen)
     {
-        if (!$skripsi->file_proposal) {
-            abort(404, 'File Proposal tidak ditemukan');
-        }
+        $dosen->load([
+            'proposalSebagaiPembimbing1', 
+            'proposalSebagaiPembimbing2'
+        ]);
 
-        $skripsi->load(['dosenPembimbing1', 'dosenPembimbing2']);
-        
-        $fileExists = Storage::disk('local')->exists($skripsi->file_proposal) || 
-                      Storage::disk('public')->exists($skripsi->file_proposal);
+        $skripsiList = $dosen->proposalSebagaiPembimbing1->merge($dosen->proposalSebagaiPembimbing2);
 
-        return view('admin.file.proposal.show', compact('skripsi', 'fileExists'));
+        return view('admin.file.proposal.show', compact('dosen', 'skripsiList'));
     }
 
     public function preview(Skripsi $skripsi)
@@ -53,14 +49,15 @@ class FileProposalController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('local')->exists($skripsi->file_proposal) ? 'local' : 'public';
-        
-        if (!Storage::disk($disk)->exists($skripsi->file_proposal)) {
+        if (Storage::disk('local')->exists($skripsi->file_proposal)) {
+            $file = Storage::disk('local')->get($skripsi->file_proposal);
+            $mimeType = Storage::disk('local')->mimeType($skripsi->file_proposal);
+        } elseif (Storage::disk('public')->exists($skripsi->file_proposal)) {
+            $file = Storage::disk('public')->get($skripsi->file_proposal);
+            $mimeType = Storage::disk('public')->mimeType($skripsi->file_proposal);
+        } else {
             abort(404);
         }
-
-        $file = Storage::disk($disk)->get($skripsi->file_proposal);
-        $mimeType = Storage::disk($disk)->mimeType($skripsi->file_proposal);
         
         return response($file, 200)
             ->header('Content-Type', $mimeType)
@@ -73,9 +70,11 @@ class FileProposalController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('local')->exists($skripsi->file_proposal) ? 'local' : 'public';
-        
-        if (!Storage::disk($disk)->exists($skripsi->file_proposal)) {
+        if (Storage::disk('local')->exists($skripsi->file_proposal)) {
+            $disk = 'local';
+        } elseif (Storage::disk('public')->exists($skripsi->file_proposal)) {
+            $disk = 'public';
+        } else {
             abort(404);
         }
 

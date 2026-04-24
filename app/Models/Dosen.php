@@ -35,27 +35,42 @@ class Dosen extends Authenticatable
 
     // ========== RELASI KE SKRIPSI ==========
     
-    /**
-     * Relasi sebagai pembimbing 1
-     */
     public function skripsiSebagaiPembimbing1()
     {
         return $this->hasMany(Skripsi::class, 'dosen_pembimbing1_id');
     }
 
-    /**
-     * Relasi sebagai pembimbing 2
-     */
     public function skripsiSebagaiPembimbing2()
     {
         return $this->hasMany(Skripsi::class, 'dosen_pembimbing2_id');
     }
 
-    /**
-     * Semua skripsi yang dibimbing (baik sebagai pembimbing 1 maupun 2)
-     */
     public function semuaSkripsiBimbingan()
     {
         return $this->skripsiSebagaiPembimbing1->merge($this->skripsiSebagaiPembimbing2);
+    }
+
+    // ========== RELASI KE SK PEMBIMBING (via Skripsi) ==========
+    
+    public function skPembimbingSebagaiPembimbing1()
+    {
+        return $this->hasMany(Skripsi::class, 'dosen_pembimbing1_id')->whereNotNull('file_sk_pembimbing');
+    }
+
+    public function skPembimbingSebagaiPembimbing2()
+    {
+        return $this->hasMany(Skripsi::class, 'dosen_pembimbing2_id')->whereNotNull('file_sk_pembimbing');
+    }
+
+    // ========== RELASI KE PROPOSAL (via Skripsi) ==========
+    
+    public function proposalSebagaiPembimbing1()
+    {
+        return $this->hasMany(Skripsi::class, 'dosen_pembimbing1_id')->whereNotNull('file_proposal');
+    }
+
+    public function proposalSebagaiPembimbing2()
+    {
+        return $this->hasMany(Skripsi::class, 'dosen_pembimbing2_id')->whereNotNull('file_proposal');
     }
 }
