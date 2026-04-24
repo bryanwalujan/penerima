@@ -204,13 +204,20 @@ class DosenProfileController extends Controller
      * Abort 403 jika tidak terautentikasi.
      */
     private function authDosen(): Dosen
-    {
-        $dosen = Auth::guard('dosen')->user();
+{
+    $user = Auth::guard('web')->user();
 
-        if (!$dosen) {
-            abort(403, 'Anda tidak memiliki akses.');
-        }
-
-        return $dosen;
+    if (!$user || $user->role !== 'dosen') {
+        abort(403, 'Anda tidak memiliki akses.');
     }
+
+    // Ambil data dosen dari tabel dosens berdasarkan email
+    $dosen = Dosen::where('email', $user->email)->first();
+
+    if (!$dosen) {
+        abort(404, 'Data dosen tidak ditemukan.');
+    }
+
+    return $dosen;
+}
 }

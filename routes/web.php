@@ -97,29 +97,27 @@ Route::prefix('admin')->group(function () {
     });
 });
 
-Route::middleware(['auth:dosen'])->group(function () {
+// ── Dosen Self-Service Routes ─────────────────────────────────────────────────
+Route::middleware(['auth'])->group(function () {
+
     Route::get('/dosen/dashboard', function () {
-        $dosen = Auth::guard('dosen')->user();
+        abort_if(Auth::user()->role !== 'dosen', 403);
+        $dosen = \App\Models\Dosen::where('email', Auth::user()->email)->first();
         return view('dosen.dashboard', compact('dosen'));
     })->name('dosen.dashboard');
 
-    // Profil
-    Route::get('/dosen/edit',   [DosenProfileController::class, 'editProfile'])   ->name('dosen.edit');
-    Route::put('/dosen/update', [DosenProfileController::class, 'updateProfile']) ->name('dosen.update');
+    Route::get('/dosen/edit',    [DosenProfileController::class, 'editProfile'])   ->name('dosen.edit');
+    Route::put('/dosen/update',  [DosenProfileController::class, 'updateProfile']) ->name('dosen.update');
 
-    // Penelitian
     Route::get('/dosen/penelitian/edit',   [DosenProfileController::class, 'editPenelitian'])   ->name('dosen.penelitian.edit');
     Route::put('/dosen/penelitian/update', [DosenProfileController::class, 'updatePenelitian']) ->name('dosen.penelitian.update');
 
-    // Pengabdian
     Route::get('/dosen/pengabdian/edit',   [DosenProfileController::class, 'editPengabdian'])   ->name('dosen.pengabdian.edit');
     Route::put('/dosen/pengabdian/update', [DosenProfileController::class, 'updatePengabdian']) ->name('dosen.pengabdian.update');
 
-    // HAKI
     Route::get('/dosen/haki/edit',   [DosenProfileController::class, 'editHaki'])   ->name('dosen.haki.edit');
     Route::put('/dosen/haki/update', [DosenProfileController::class, 'updateHaki']) ->name('dosen.haki.update');
 
-    // Paten
     Route::get('/dosen/paten/edit',   [DosenProfileController::class, 'editPaten'])   ->name('dosen.paten.edit');
     Route::put('/dosen/paten/update', [DosenProfileController::class, 'updatePaten']) ->name('dosen.paten.update');
 });
