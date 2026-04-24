@@ -10,7 +10,9 @@ use App\Http\Controllers\Api\SyncDosenController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\SkripsiController;
-
+use App\Http\Controllers\Admin\FileSkripsiController;
+use App\Http\Controllers\Admin\FileSkPembimbingController;
+use App\Http\Controllers\Admin\FileProposalController;
 
 // ── Rute Publik ───────────────────────────────────────────────────────────────
 Route::get('/', [PublicController::class, 'index'])->name('public.index');
