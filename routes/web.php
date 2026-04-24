@@ -87,17 +87,17 @@ Route::prefix('admin')->group(function () {
     // File SK Pembimbing Routes
     Route::prefix('file/sk-pembimbing')->name('admin.file.sk-pembimbing.')->group(function () {
         Route::get('/', [FileSkPembimbingController::class, 'index'])->name('index');
-        Route::get('/{skripsi}', [FileSkPembimbingController::class, 'show'])->name('show');
-        Route::get('/{skripsi}/preview', [FileSkPembimbingController::class, 'preview'])->name('preview');
-        Route::get('/{skripsi}/download', [FileSkPembimbingController::class, 'download'])->name('download');
+        Route::get('/dosen/{dosen}', [FileSkPembimbingController::class, 'show'])->name('dosen');
+        Route::get('/preview/{skripsi}', [FileSkPembimbingController::class, 'preview'])->name('preview');
+        Route::get('/download/{skripsi}', [FileSkPembimbingController::class, 'download'])->name('download');
     });
     
     // File Proposal Routes
     Route::prefix('file/proposal')->name('admin.file.proposal.')->group(function () {
         Route::get('/', [FileProposalController::class, 'index'])->name('index');
-        Route::get('/{skripsi}', [FileProposalController::class, 'show'])->name('show');
-        Route::get('/{skripsi}/preview', [FileProposalController::class, 'preview'])->name('preview');
-        Route::get('/{skripsi}/download', [FileProposalController::class, 'download'])->name('download');
+        Route::get('/dosen/{dosen}', [FileProposalController::class, 'show'])->name('dosen');
+        Route::get('/preview/{skripsi}', [FileProposalController::class, 'preview'])->name('preview');
+        Route::get('/download/{skripsi}', [FileProposalController::class, 'download'])->name('download');
     });
 });
 
