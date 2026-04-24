@@ -14,58 +14,56 @@ class AuthController extends Controller
     }
 
     // Login Admin
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-        ]);
+public function login(Request $request)
+{
+    $credentials = $request->validate([
+        'email'    => 'required|email',
+        'password' => 'required',
+    ]);
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-
-            if ($user->role === 'admin') {
-                $request->session()->regenerate();
-                return redirect()->route('admin.dashboard');
-            }
-
-            Auth::logout();
-            return back()->withErrors([
-                'email' => 'Hanya admin yang dapat login melalui form ini.',
-            ]);
+    if (Auth::attempt($credentials)) {
+        $user = Auth::user();
+        if ($user->role === 'admin') {
+            $request->session()->regenerate();
+            return redirect()->route('admin.dashboard');
         }
-
-        return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ])->withInput($request->only('email'));
+        Auth::logout();
+        return back()
+            ->withErrors(['email' => 'Akun ini bukan akun admin.'])
+            ->with('active_tab', 'admin');
     }
 
-    // Login Dosen (manual)
-    public function loginDosen(Request $request)
-    {
-        $credentials = $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-        ]);
+    return back()
+        ->withErrors(['email' => 'Email atau password salah.'])
+        ->withInput($request->only('email'))
+        ->with('active_tab', 'admin');
+}
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
+// Login Dosen (manual)
+public function loginDosen(Request $request)
+{
+    $credentials = $request->validate([
+        'email'    => 'required|email',
+        'password' => 'required',
+    ]);
 
-            if ($user->role === 'dosen') {
-                $request->session()->regenerate();
-                return redirect()->route('dosen.dashboard');
-            }
-
-            Auth::logout();
-            return back()->withErrors([
-                'email_dosen' => 'Akun ini bukan akun dosen.',
-            ]);
+    if (Auth::attempt($credentials)) {
+        $user = Auth::user();
+        if ($user->role === 'dosen') {
+            $request->session()->regenerate();
+            return redirect()->route('dosen.dashboard');
         }
-
-        return back()->withErrors([
-            'email_dosen' => 'Email atau password salah.',
-        ])->withInput($request->only('email'));
+        Auth::logout();
+        return back()
+            ->withErrors(['email_dosen' => 'Akun ini bukan akun dosen.'])
+            ->with('active_tab', 'dosen');
     }
+
+    return back()
+        ->withErrors(['email_dosen' => 'Email atau password salah.'])
+        ->withInput($request->only('email'))
+        ->with('active_tab', 'dosen');
+}
 
     // Logout
     public function logout(Request $request)
