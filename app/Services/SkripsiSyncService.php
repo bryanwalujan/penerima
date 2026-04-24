@@ -100,89 +100,78 @@ class SkripsiSyncService
      *    ]
      */
     private function saveFilesToSeparateFolders(Skripsi $skripsi, array $filesBase64): array
-    {
-        $saved  = [];
-        $slug   = Str::slug($skripsi->folder_name);
+{
+    $saved = [];
+    $slug = Str::slug($skripsi->folder_name);
+    
+    $map = [
+        'skripsi' => [
+            'folder' => 'skripsi',
+            'filename' => 'Skripsi.pdf',
+            'label' => 'Skripsi'
+        ],
+        'sk_pembimbing' => [
+            'folder' => 'sk_pembimbing',
+            'filename' => 'SK_Pembimbing.pdf',
+            'label' => 'SK_Pembimbing'
+        ],
+        'proposal' => [
+            'folder' => 'proposal',
+            'filename' => 'Proposal.pdf',
+            'label' => 'Proposal'
+        ],
+    ];
+
+    foreach ($map as $fileKey => $config) {
+        $fileData = $filesBase64[$fileKey] ?? null;
         
-        // Mapping default untuk setiap jenis file
-        $defaultMap = [
-            'skripsi' => [
-                'folder' => 'skripsi',
-                'filename' => 'Skripsi.pdf',
-                'label' => 'Skripsi'
-            ],
-            'sk_pembimbing' => [
-                'folder' => 'sk_pembimbing',
-                'filename' => 'SK_Pembimbing.pdf',
-                'label' => 'SK_Pembimbing'
-            ],
-            'proposal' => [
-                'folder' => 'proposal',
-                'filename' => 'Proposal.pdf',
-                'label' => 'Proposal'
-            ],
-        ];
-
-        foreach ($defaultMap as $fileKey => $config) {
-            $fileData = $filesBase64[$fileKey] ?? null;
-            
-            if (!$fileData) {
-                Log::info("[SkripsiSync] File {$fileKey} tidak ada dalam payload");
-                continue;
-            }
-
-            // Cek format: apakah fileData berupa array (format baru) atau string (format lama)
-            $isNewFormat = is_array($fileData) && isset($fileData['content']);
-            $base64 = null;
-            $targetFolder = $config['folder'];
-            $targetFilename = $config['filename'];
-
-            if ($isNewFormat) {
-                // Format baru: files[$key] = ['content' => 'base64...', 'folder' => '...', 'filename' => '...']
-                $base64 = $fileData['content'] ?? null;
-                $targetFolder = $fileData['folder'] ?? $config['folder'];
-                $targetFilename = $fileData['filename'] ?? $config['filename'];
-                
-                Log::info("[SkripsiSync] Menggunakan format baru untuk {$fileKey}", [
-                    'folder' => $targetFolder,
-                    'filename' => $targetFilename,
-                    'size' => $fileData['size'] ?? 'unknown'
-                ]);
-            } else {
-                // Format lama: files[$key] = "base64string..."
-                $base64 = $fileData;
-                Log::info("[SkripsiSync] Menggunakan format lama untuk {$fileKey}");
-            }
-
-            if (!$base64) {
-                Log::warning("[SkripsiSync] Base64 content kosong untuk {$fileKey}");
-                continue;
-            }
-
-            try {
-                $decoded = base64_decode($base64, strict: true);
-                if ($decoded === false) {
-                    Log::warning("[SkripsiSync] Base64 decode gagal untuk {$fileKey}");
-                    continue;
-                }
-
-                // Buat path: {folder}/{slug}/{filename}
-                $path = "{$targetFolder}/{$slug}/{$targetFilename}";
-
-                // Simpan ke disk 'local' → storage/app/private/
-                Storage::disk('local')->put($path, $decoded);
-
-                $saved[$fileKey] = $path;
-
-                Log::info("[SkripsiSync] File tersimpan: {$path} (Size: " . strlen($decoded) . " bytes)");
-
-            } catch (\Exception $e) {
-                Log::error("[SkripsiSync] Gagal simpan file {$fileKey}: " . $e->getMessage());
-            }
+        if (!$fileData) {
+            continue;
         }
 
-        return $saved;
+        // Handle multiple formats
+        $base64 = null;
+        
+        if (is_string($fileData)) {
+            // Format 1: Langsung string base64
+            $base64 = $fileData;
+            Log::info("[SkripsiSync] Format string untuk {$fileKey}");
+        } elseif (is_array($fileData) && isset($fileData['content'])) {
+            // Format 2: Array dengan key content
+            $base64 = $fileData['content'];
+            Log::info("[SkripsiSync] Format array untuk {$fileKey}", [
+                'folder' => $fileData['folder'] ?? $config['folder'],
+                'filename' => $fileData['filename'] ?? $config['filename']
+            ]);
+        } else {
+            Log::warning("[SkripsiSync] Format tidak dikenal untuk {$fileKey}");
+            continue;
+        }
+
+        if (!$base64) {
+            continue;
+        }
+
+        try {
+            $decoded = base64_decode($base64, strict: true);
+            if ($decoded === false) {
+                Log::warning("[SkripsiSync] Base64 decode gagal untuk {$fileKey}");
+                continue;
+            }
+
+            $path = "{$config['folder']}/{$slug}/{$config['filename']}";
+            Storage::disk('local')->put($path, $decoded);
+            $saved[$fileKey] = $path;
+
+            Log::info("[SkripsiSync] File tersimpan: {$path} (Size: " . strlen($decoded) . " bytes)");
+
+        } catch (\Exception $e) {
+            Log::error("[SkripsiSync] Gagal simpan file {$fileKey}: " . $e->getMessage());
+        }
     }
+
+    return $saved;
+}
 
     /**
      * Resolve dosen dari dosen_list berdasarkan role.
