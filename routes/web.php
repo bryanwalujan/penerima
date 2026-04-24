@@ -19,14 +19,12 @@ Route::get('/', [PublicController::class, 'index'])->name('public.index');
 Route::post('/search', [PublicController::class, 'search'])->name('public.search');
 Route::get('/category/{category}', [PublicController::class, 'category'])->name('public.category');
 
-// ── Autentikasi Admin ─────────────────────────────────────────────────────────
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// ── Autentikasi Dosen (SSO Google) ───────────────────────────────────────────
-Route::get('/login/google', [AuthController::class, 'redirectToGoogle'])->name('login.google');
-Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
+// ── Autentikasi Dosen (Manual) ───────────────────────────────────────────────
+Route::post('/login/dosen', [AuthController::class, 'loginDosen'])->name('login.dosen');
 
 // ── Admin Routes ──────────────────────────────────────────────────────────────
 Route::prefix('admin')->group(function () {
