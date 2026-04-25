@@ -211,6 +211,13 @@
             </div>
         </div>
 
+        <div class="mt-6">
+            <a href="{{ route('dosen.password.edit') }}"
+               class="inline-flex items-center px-5 py-2.5 border-2 border-blue-200 text-sm font-medium rounded-xl text-blue-700 bg-blue-50 hover:bg-blue-100 transition-all">
+                <i class="fas fa-lock mr-2"></i> Ganti Password Akun
+            </a>
+        </div>
+
         {{-- Action Buttons --}}
         <div class="flex justify-end gap-4 mt-8 pb-8">
             <a href="{{ route('dosen.dashboard') }}" 

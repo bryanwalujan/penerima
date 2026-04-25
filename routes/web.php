@@ -120,4 +120,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/dosen/paten/edit',   [DosenProfileController::class, 'editPaten'])   ->name('dosen.paten.edit');
     Route::put('/dosen/paten/update', [DosenProfileController::class, 'updatePaten']) ->name('dosen.paten.update');
+
+    // tambahkan di dalam Route::middleware(['auth'])->group(...)
+    Route::get('/dosen/password/edit',   [DosenProfileController::class, 'editPassword'])   ->name('dosen.password.edit');
+    Route::put('/dosen/password/update', [DosenProfileController::class, 'updatePassword']) ->name('dosen.password.update');
 });

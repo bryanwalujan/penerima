@@ -220,4 +220,48 @@ class DosenProfileController extends Controller
 
     return $dosen;
 }
+
+public function editPassword()
+{
+    $dosen = $this->authDosen();
+    return view('dosen.edit-password', compact('dosen'));
+}
+
+public function updatePassword(Request $request)
+{
+    $user = Auth::guard('web')->user();
+
+    $request->validate([
+        'current_password'          => 'required|string',
+        'password'                  => 'required|string|min:8|confirmed',
+        'password_confirmation'     => 'required|string',
+    ], [
+        'password.min'              => 'Password baru minimal 8 karakter.',
+        'password.confirmed'        => 'Konfirmasi password tidak cocok.',
+        'current_password.required' => 'Password saat ini wajib diisi.',
+    ]);
+
+    // Verifikasi password lama
+    if (!Hash::check($request->current_password, $user->password)) {
+        return back()->withErrors([
+            'current_password' => 'Password saat ini tidak sesuai.',
+        ])->withInput();
+    }
+
+    $user->update([
+        'password' => Hash::make($request->password),
+    ]);
+
+    $dosen = $this->authDosen();
+    $this->auditLog(
+        'change_password',
+        "Dosen changed password: {$dosen->nama} (NIDN: {$dosen->nidn})",
+        \App\Models\User::class,
+        $user->id,
+        $dosen->id
+    );
+
+    return redirect()->route('dosen.dashboard')
+                     ->with('success', 'Password berhasil diperbarui.');
+}
 }
