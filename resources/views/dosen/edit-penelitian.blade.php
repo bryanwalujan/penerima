@@ -324,6 +324,6 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
     <script src="{{ asset('js/dosen.js') }}"></script>
-@endsection
+@endpush
