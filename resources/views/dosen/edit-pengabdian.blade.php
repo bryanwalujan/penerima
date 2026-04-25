@@ -311,87 +311,63 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
-    let editStates = {};
-    
-    function toggleEditMode(id) {
-        const form = document.getElementById(`form-${id}`);
-        if (!form) return;
-        
-        const inputs = form.querySelectorAll('[data-editable="true"]');
-        const editButtons = document.getElementById(`edit-buttons-${id}`);
-        const editBtn = document.getElementById(`edit-btn-${id}`);
-        
-        const isEditMode = editStates[id] || false;
-        
-        inputs.forEach(input => {
+    var editStates = {};
+
+    window.toggleEditMode = function (id) {
+        var form = document.getElementById('form-' + id);
+        var inputs = form.querySelectorAll('[data-editable="true"]');
+        var editButtons = document.getElementById('edit-buttons-' + id);
+        var editBtn = document.getElementById('edit-btn-' + id);
+        var isEditMode = editStates[id] || false;
+
+        inputs.forEach(function (input) {
             if (input.tagName === 'SELECT') {
-                if (isEditMode) {
-                    input.disabled = true;
-                } else {
-                    input.disabled = false;
-                }
+                input.disabled = isEditMode;
             } else {
-                if (isEditMode) {
-                    input.setAttribute('readonly', true);
-                } else {
-                    input.removeAttribute('readonly');
-                }
+                isEditMode ? input.setAttribute('readonly', true) : input.removeAttribute('readonly');
             }
-            
-            if (isEditMode) {
-                input.classList.remove('bg-white');
-                input.classList.add('bg-gray-100');
-            } else {
-                input.classList.remove('bg-gray-100');
-                input.classList.add('bg-white');
-            }
+            input.classList.toggle('bg-gray-100', isEditMode);
+            input.classList.toggle('bg-white', !isEditMode);
         });
-        
+
         if (editButtons) {
-            if (!isEditMode) {
-                editButtons.classList.remove('hidden');
-                if (editBtn) {
-                    editBtn.innerHTML = '<i class="fas fa-times"></i> Batal Edit';
-                    editBtn.classList.remove('text-blue-500', 'hover:text-blue-700');
-                    editBtn.classList.add('text-orange-500', 'hover:text-orange-700');
-                }
-                editStates[id] = true;
-            } else {
+            if (isEditMode) {
                 editButtons.classList.add('hidden');
-                if (editBtn) {
-                    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-                    editBtn.classList.remove('text-orange-500', 'hover:text-orange-700');
-                    editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
-                }
-                editStates[id] = false;
+                editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                editBtn.classList.remove('text-orange-500', 'hover:text-orange-700');
+                editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
+            } else {
+                editButtons.classList.remove('hidden');
+                editBtn.innerHTML = '<i class="fas fa-times"></i> Batal Edit';
+                editBtn.classList.remove('text-blue-500', 'hover:text-blue-700');
+                editBtn.classList.add('text-orange-500', 'hover:text-orange-700');
             }
+            editStates[id] = !isEditMode;
         }
-    }
-    
-    function cancelEdit(id) {
+    };
+
+    window.cancelEdit = function (id) {
         location.reload();
-    }
-    
-    let deleteUrl = '';
-    
-    function confirmDelete(url, title) {
-        deleteUrl = url;
-        document.getElementById('deleteMessage').innerHTML = `Apakah Anda yakin ingin menghapus data pengabdian "<strong>${title}</strong>"?`;
+    };
+
+    window.confirmDelete = function (url, title) {
+        document.getElementById('deleteMessage').innerHTML =
+            'Apakah Anda yakin ingin menghapus data penelitian "<strong>' + title + '</strong>"?';
         document.getElementById('deleteForm').action = url;
         document.getElementById('deleteModal').classList.remove('hidden');
-    }
-    
-    function closeDeleteModal() {
+    };
+
+    window.closeDeleteModal = function () {
         document.getElementById('deleteModal').classList.add('hidden');
-    }
-    
-    window.onclick = function(event) {
-        const modal = document.getElementById('deleteModal');
-        if (event.target == modal) {
-            closeDeleteModal();
+    };
+
+    document.addEventListener('click', function (event) {
+        var modal = document.getElementById('deleteModal');
+        if (modal && event.target === modal) {
+            window.closeDeleteModal();
         }
-    }
+    });
 </script>
-@endsection
+@endpush
