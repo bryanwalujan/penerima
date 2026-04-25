@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Dosen/DosenProfileController.php
 
 namespace App\Http\Controllers\Dosen;
 
@@ -13,13 +14,8 @@ use App\Models\Paten;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
-/**
- * DosenProfileController
- *
- * Dipakai oleh dosen yang login via guard 'dosen'
- * untuk mengelola profil dan data riset milik sendiri.
- */
 class DosenProfileController extends Controller
 {
     use HasDosenHelpers;
@@ -31,7 +27,6 @@ class DosenProfileController extends Controller
     public function editProfile()
     {
         $dosen = $this->authDosen();
-
         return view('dosen.edit', compact('dosen'));
     }
 
@@ -41,14 +36,13 @@ class DosenProfileController extends Controller
 
         $request->validate([
             'nama'  => 'required|string|max:255',
-            'email' => 'required|email|unique:dosens,email,' . $dosen->id,
             'nidn'  => 'required|string|max:20|unique:dosens,nidn,' . $dosen->id,
             'nip'   => 'nullable|string|max:20',
             'nuptk' => 'nullable|string|max:20',
             'foto'  => 'nullable|image|mimes:jpeg,png,jpg|max:10000',
         ]);
 
-        $data = $request->only(['nama', 'email', 'nidn', 'nip', 'nuptk']);
+        $data = $request->only(['nama', 'nidn', 'nip', 'nuptk']);
 
         if ($foto = $this->handleFotoUpload($request, $dosen)) {
             $data['foto'] = $foto;
@@ -68,201 +62,396 @@ class DosenProfileController extends Controller
     }
 
     // =========================================================================
-    // PENELITIAN
+    // PENELITIAN - CRUD lengkap
     // =========================================================================
 
     public function editPenelitian()
     {
         $dosen = $this->authDosen();
-        $penelitians = $dosen->penelitians;
+        $penelitians = $dosen->penelitians()->orderBy('tahun', 'desc')->get();
 
         return view('dosen.edit-penelitian', compact('dosen', 'penelitians'));
     }
 
-    public function updatePenelitian(Request $request)
+    public function storePenelitian(Request $request)
     {
         $dosen = $this->authDosen();
 
         $request->validate([
-            'penelitians.*.skema'            => 'nullable|string',
-            'penelitians.*.posisi'           => 'nullable|string',
-            'penelitians.*.judul_penelitian' => 'nullable|string',
-            'penelitians.*.sumber_dana'      => 'nullable|string',
-            'penelitians.*.status'           => 'nullable|string|in:Selesai,Berjalan,Diajukan',
-            'penelitians.*.tahun'            => 'nullable|integer',
-            'penelitians.*.link_luaran'      => 'nullable|url',
+            'skema'            => 'nullable|string',
+            'posisi'           => 'nullable|string',
+            'judul_penelitian' => 'required|string|max:500',
+            'sumber_dana'      => 'nullable|string',
+            'status'           => 'nullable|string|in:Selesai,Berjalan,Diajukan',
+            'tahun'            => 'nullable|integer|min:2000|max:' . (date('Y') + 5),
+            'link_luaran'      => 'nullable|url',
         ]);
 
-        $dosen->penelitians()->delete();
-        $this->syncRelations($dosen, ['penelitians' => $request->penelitians ?? []]);
+        $penelitian = $dosen->penelitians()->create($request->all());
 
-        $this->auditLog('update_penelitian', 'Dosen updated penelitian data', Penelitian::class, null, $dosen->id);
+        $this->auditLog(
+            'create_penelitian',
+            "Dosen created penelitian: {$penelitian->judul_penelitian}",
+            Penelitian::class,
+            $penelitian->id,
+            $dosen->id
+        );
 
-        return redirect()->route('dosen.dashboard')->with('success', 'Penelitian berhasil diperbarui.');
+        return redirect()->route('dosen.penelitian.edit')->with('success', 'Penelitian berhasil ditambahkan.');
+    }
+
+    public function updatePenelitian(Request $request, $id)
+    {
+        $dosen = $this->authDosen();
+        $penelitian = Penelitian::where('dosen_id', $dosen->id)->findOrFail($id);
+
+        $request->validate([
+            'skema'            => 'nullable|string',
+            'posisi'           => 'nullable|string',
+            'judul_penelitian' => 'required|string|max:500',
+            'sumber_dana'      => 'nullable|string',
+            'status'           => 'nullable|string|in:Selesai,Berjalan,Diajukan',
+            'tahun'            => 'nullable|integer|min:2000|max:' . (date('Y') + 5),
+            'link_luaran'      => 'nullable|url',
+        ]);
+
+        $penelitian->update($request->all());
+
+        $this->auditLog(
+            'update_penelitian',
+            "Dosen updated penelitian: {$penelitian->judul_penelitian}",
+            Penelitian::class,
+            $penelitian->id,
+            $dosen->id
+        );
+
+        return redirect()->route('dosen.penelitian.edit')->with('success', 'Penelitian berhasil diperbarui.');
+    }
+
+    public function destroyPenelitian($id)
+    {
+        $dosen = $this->authDosen();
+        $penelitian = Penelitian::where('dosen_id', $dosen->id)->findOrFail($id);
+        $judul = $penelitian->judul_penelitian;
+        $penelitian->delete();
+
+        $this->auditLog(
+            'delete_penelitian',
+            "Dosen deleted penelitian: {$judul}",
+            Penelitian::class,
+            $id,
+            $dosen->id
+        );
+
+        return redirect()->route('dosen.penelitian.edit')->with('success', 'Penelitian berhasil dihapus.');
     }
 
     // =========================================================================
-    // PENGABDIAN
+    // PENGABDIAN - CRUD lengkap
     // =========================================================================
 
     public function editPengabdian()
     {
         $dosen = $this->authDosen();
-        $pengabdians = $dosen->pengabdians;
+        $pengabdians = $dosen->pengabdians()->orderBy('tahun', 'desc')->get();
 
         return view('dosen.edit-pengabdian', compact('dosen', 'pengabdians'));
     }
 
-    public function updatePengabdian(Request $request)
+    public function storePengabdian(Request $request)
     {
         $dosen = $this->authDosen();
 
         $request->validate([
-            'pengabdians.*.skema'            => 'nullable|string',
-            'pengabdians.*.posisi'           => 'nullable|string',
-            'pengabdians.*.judul_pengabdian' => 'nullable|string',
-            'pengabdians.*.sumber_dana'      => 'nullable|string',
-            'pengabdians.*.status'           => 'nullable|string|in:Selesai,Berjalan,Diajukan',
-            'pengabdians.*.tahun'            => 'nullable|integer',
-            'pengabdians.*.link_luaran'      => 'nullable|url',
+            'skema'             => 'nullable|string',
+            'posisi'            => 'nullable|string',
+            'judul_pengabdian'  => 'required|string|max:500',
+            'sumber_dana'       => 'nullable|string',
+            'status'            => 'nullable|string|in:Selesai,Berjalan,Diajukan',
+            'tahun'             => 'nullable|integer|min:2000|max:' . (date('Y') + 5),
+            'link_luaran'       => 'nullable|url',
         ]);
 
-        $dosen->pengabdians()->delete();
-        $this->syncRelations($dosen, ['pengabdians' => $request->pengabdians ?? []]);
+        $pengabdian = $dosen->pengabdians()->create($request->all());
 
-        $this->auditLog('update_pengabdian', 'Dosen updated pengabdian data', Pengabdian::class, null, $dosen->id);
+        $this->auditLog(
+            'create_pengabdian',
+            "Dosen created pengabdian: {$pengabdian->judul_pengabdian}",
+            Pengabdian::class,
+            $pengabdian->id,
+            $dosen->id
+        );
 
-        return redirect()->route('dosen.dashboard')->with('success', 'Pengabdian berhasil diperbarui.');
+        return redirect()->route('dosen.pengabdian.edit')->with('success', 'Pengabdian berhasil ditambahkan.');
+    }
+
+    public function updatePengabdian(Request $request, $id)
+    {
+        $dosen = $this->authDosen();
+        $pengabdian = Pengabdian::where('dosen_id', $dosen->id)->findOrFail($id);
+
+        $request->validate([
+            'skema'             => 'nullable|string',
+            'posisi'            => 'nullable|string',
+            'judul_pengabdian'  => 'required|string|max:500',
+            'sumber_dana'       => 'nullable|string',
+            'status'            => 'nullable|string|in:Selesai,Berjalan,Diajukan',
+            'tahun'             => 'nullable|integer|min:2000|max:' . (date('Y') + 5),
+            'link_luaran'       => 'nullable|url',
+        ]);
+
+        $pengabdian->update($request->all());
+
+        $this->auditLog(
+            'update_pengabdian',
+            "Dosen updated pengabdian: {$pengabdian->judul_pengabdian}",
+            Pengabdian::class,
+            $pengabdian->id,
+            $dosen->id
+        );
+
+        return redirect()->route('dosen.pengabdian.edit')->with('success', 'Pengabdian berhasil diperbarui.');
+    }
+
+    public function destroyPengabdian($id)
+    {
+        $dosen = $this->authDosen();
+        $pengabdian = Pengabdian::where('dosen_id', $dosen->id)->findOrFail($id);
+        $judul = $pengabdian->judul_pengabdian;
+        $pengabdian->delete();
+
+        $this->auditLog(
+            'delete_pengabdian',
+            "Dosen deleted pengabdian: {$judul}",
+            Pengabdian::class,
+            $id,
+            $dosen->id
+        );
+
+        return redirect()->route('dosen.pengabdian.edit')->with('success', 'Pengabdian berhasil dihapus.');
     }
 
     // =========================================================================
-    // HAKI
+    // HAKI - CRUD lengkap
     // =========================================================================
 
     public function editHaki()
     {
         $dosen = $this->authDosen();
-        $hakis = $dosen->hakis;
+        $hakis = $dosen->hakis()->orderBy('expired', 'desc')->get();
 
         return view('dosen.edit-haki', compact('dosen', 'hakis'));
     }
 
-    public function updateHaki(Request $request)
+    public function storeHaki(Request $request)
     {
         $dosen = $this->authDosen();
 
         $request->validate([
-            'hakis.*.judul_haki' => 'nullable|string',
-            'hakis.*.expired'    => 'nullable|date',
-            'hakis.*.link'       => 'nullable|url',
+            'judul_haki' => 'required|string|max:500',
+            'expired'    => 'nullable|date',
+            'link'       => 'nullable|url',
         ]);
 
-        $dosen->hakis()->delete();
-        $this->syncRelations($dosen, ['hakis' => $request->hakis ?? []]);
+        $haki = $dosen->hakis()->create($request->all());
 
-        $this->auditLog('update_haki', 'Dosen updated haki data', Haki::class, null, $dosen->id);
+        $this->auditLog(
+            'create_haki',
+            "Dosen created haki: {$haki->judul_haki}",
+            Haki::class,
+            $haki->id,
+            $dosen->id
+        );
 
-        return redirect()->route('dosen.dashboard')->with('success', 'HAKI berhasil diperbarui.');
+        return redirect()->route('dosen.haki.edit')->with('success', 'HAKI berhasil ditambahkan.');
+    }
+
+    public function updateHaki(Request $request, $id)
+    {
+        $dosen = $this->authDosen();
+        $haki = Haki::where('dosen_id', $dosen->id)->findOrFail($id);
+
+        $request->validate([
+            'judul_haki' => 'required|string|max:500',
+            'expired'    => 'nullable|date',
+            'link'       => 'nullable|url',
+        ]);
+
+        $haki->update($request->all());
+
+        $this->auditLog(
+            'update_haki',
+            "Dosen updated haki: {$haki->judul_haki}",
+            Haki::class,
+            $haki->id,
+            $dosen->id
+        );
+
+        return redirect()->route('dosen.haki.edit')->with('success', 'HAKI berhasil diperbarui.');
+    }
+
+    public function destroyHaki($id)
+    {
+        $dosen = $this->authDosen();
+        $haki = Haki::where('dosen_id', $dosen->id)->findOrFail($id);
+        $judul = $haki->judul_haki;
+        $haki->delete();
+
+        $this->auditLog(
+            'delete_haki',
+            "Dosen deleted haki: {$judul}",
+            Haki::class,
+            $id,
+            $dosen->id
+        );
+
+        return redirect()->route('dosen.haki.edit')->with('success', 'HAKI berhasil dihapus.');
     }
 
     // =========================================================================
-    // PATEN
+    // PATEN - CRUD lengkap
     // =========================================================================
 
     public function editPaten()
     {
         $dosen = $this->authDosen();
-        $patens = $dosen->patens;
+        $patens = $dosen->patens()->orderBy('expired', 'desc')->get();
 
         return view('dosen.edit-paten', compact('dosen', 'patens'));
     }
 
-    public function updatePaten(Request $request)
+    public function storePaten(Request $request)
     {
         $dosen = $this->authDosen();
 
         $request->validate([
-            'patens.*.judul_paten'  => 'nullable|string',
-            'patens.*.jenis_paten'  => 'nullable|string',
-            'patens.*.expired'      => 'nullable|date',
-            'patens.*.link'         => 'nullable|url',
+            'judul_paten'  => 'required|string|max:500',
+            'jenis_paten'  => 'nullable|string',
+            'expired'      => 'nullable|date',
+            'link'         => 'nullable|url',
         ]);
 
-        $dosen->patens()->delete();
-        $this->syncRelations($dosen, ['patens' => $request->patens ?? []]);
+        $paten = $dosen->patens()->create($request->all());
 
-        $this->auditLog('update_paten', 'Dosen updated paten data', Paten::class, null, $dosen->id);
+        $this->auditLog(
+            'create_paten',
+            "Dosen created paten: {$paten->judul_paten}",
+            Paten::class,
+            $paten->id,
+            $dosen->id
+        );
 
-        return redirect()->route('dosen.dashboard')->with('success', 'Paten berhasil diperbarui.');
+        return redirect()->route('dosen.paten.edit')->with('success', 'Paten berhasil ditambahkan.');
+    }
+
+    public function updatePaten(Request $request, $id)
+    {
+        $dosen = $this->authDosen();
+        $paten = Paten::where('dosen_id', $dosen->id)->findOrFail($id);
+
+        $request->validate([
+            'judul_paten'  => 'required|string|max:500',
+            'jenis_paten'  => 'nullable|string',
+            'expired'      => 'nullable|date',
+            'link'         => 'nullable|url',
+        ]);
+
+        $paten->update($request->all());
+
+        $this->auditLog(
+            'update_paten',
+            "Dosen updated paten: {$paten->judul_paten}",
+            Paten::class,
+            $paten->id,
+            $dosen->id
+        );
+
+        return redirect()->route('dosen.paten.edit')->with('success', 'Paten berhasil diperbarui.');
+    }
+
+    public function destroyPaten($id)
+    {
+        $dosen = $this->authDosen();
+        $paten = Paten::where('dosen_id', $dosen->id)->findOrFail($id);
+        $judul = $paten->judul_paten;
+        $paten->delete();
+
+        $this->auditLog(
+            'delete_paten',
+            "Dosen deleted paten: {$judul}",
+            Paten::class,
+            $id,
+            $dosen->id
+        );
+
+        return redirect()->route('dosen.paten.edit')->with('success', 'Paten berhasil dihapus.');
+    }
+
+    // =========================================================================
+    // PASSWORD
+    // =========================================================================
+
+    public function editPassword()
+    {
+        $dosen = $this->authDosen();
+        return view('dosen.edit-password', compact('dosen'));
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'current_password'          => 'required|string',
+            'password'                  => 'required|string|min:8|confirmed',
+            'password_confirmation'     => 'required|string',
+        ], [
+            'password.min'              => 'Password baru minimal 8 karakter.',
+            'password.confirmed'        => 'Konfirmasi password tidak cocok.',
+            'current_password.required' => 'Password saat ini wajib diisi.',
+        ]);
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors([
+                'current_password' => 'Password saat ini tidak sesuai.',
+            ])->withInput();
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        $dosen = $this->authDosen();
+        $this->auditLog(
+            'change_password',
+            "Dosen changed password: {$dosen->nama} (NIDN: {$dosen->nidn})",
+            \App\Models\User::class,
+            $user->id,
+            $dosen->id
+        );
+
+        return redirect()->route('dosen.dashboard')
+                         ->with('success', 'Password berhasil diperbarui.');
     }
 
     // =========================================================================
     // PRIVATE HELPER
     // =========================================================================
 
-    /**
-     * Ambil dosen yang sedang login via guard 'dosen'.
-     * Abort 403 jika tidak terautentikasi.
-     */
     private function authDosen(): Dosen
-{
-    $user = Auth::guard('web')->user();
+    {
+        $user = Auth::user();
 
-    if (!$user || $user->role !== 'dosen') {
-        abort(403, 'Anda tidak memiliki akses.');
+        if (!$user || $user->role !== 'dosen') {
+            abort(403, 'Anda tidak memiliki akses.');
+        }
+
+        $dosen = Dosen::where('email', $user->email)->first();
+
+        if (!$dosen) {
+            abort(404, 'Data dosen tidak ditemukan.');
+        }
+
+        return $dosen;
     }
-
-    // Ambil data dosen dari tabel dosens berdasarkan email
-    $dosen = Dosen::where('email', $user->email)->first();
-
-    if (!$dosen) {
-        abort(404, 'Data dosen tidak ditemukan.');
-    }
-
-    return $dosen;
-}
-
-public function editPassword()
-{
-    $dosen = $this->authDosen();
-    return view('dosen.edit-password', compact('dosen'));
-}
-
-public function updatePassword(Request $request)
-{
-    $user = Auth::guard('web')->user();
-
-    $request->validate([
-        'current_password'          => 'required|string',
-        'password'                  => 'required|string|min:8|confirmed',
-        'password_confirmation'     => 'required|string',
-    ], [
-        'password.min'              => 'Password baru minimal 8 karakter.',
-        'password.confirmed'        => 'Konfirmasi password tidak cocok.',
-        'current_password.required' => 'Password saat ini wajib diisi.',
-    ]);
-
-    // Verifikasi password lama
-    if (!Hash::check($request->current_password, $user->password)) {
-        return back()->withErrors([
-            'current_password' => 'Password saat ini tidak sesuai.',
-        ])->withInput();
-    }
-
-    $user->update([
-        'password' => Hash::make($request->password),
-    ]);
-
-    $dosen = $this->authDosen();
-    $this->auditLog(
-        'change_password',
-        "Dosen changed password: {$dosen->nama} (NIDN: {$dosen->nidn})",
-        \App\Models\User::class,
-        $user->id,
-        $dosen->id
-    );
-
-    return redirect()->route('dosen.dashboard')
-                     ->with('success', 'Password berhasil diperbarui.');
-}
 }

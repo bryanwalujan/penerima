@@ -6,7 +6,6 @@ use App\Http\Controllers\Dosen\DosenProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\Api\SyncDosenController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\SkripsiController;
@@ -97,31 +96,42 @@ Route::prefix('admin')->group(function () {
     });
 });
 
-// ── Dosen Self-Service Routes ─────────────────────────────────────────────────
 Route::middleware(['auth'])->group(function () {
-
     Route::get('/dosen/dashboard', function () {
         abort_if(Auth::user()->role !== 'dosen', 403);
         $dosen = \App\Models\Dosen::where('email', Auth::user()->email)->first();
         return view('dosen.dashboard', compact('dosen'));
     })->name('dosen.dashboard');
 
-    Route::get('/dosen/edit',    [DosenProfileController::class, 'editProfile'])   ->name('dosen.edit');
-    Route::put('/dosen/update',  [DosenProfileController::class, 'updateProfile']) ->name('dosen.update');
+    // Profile routes
+    Route::get('/dosen/edit',    [DosenProfileController::class, 'editProfile'])->name('dosen.edit');
+    Route::put('/dosen/update',  [DosenProfileController::class, 'updateProfile'])->name('dosen.update');
 
-    Route::get('/dosen/penelitian/edit',   [DosenProfileController::class, 'editPenelitian'])   ->name('dosen.penelitian.edit');
-    Route::put('/dosen/penelitian/update', [DosenProfileController::class, 'updatePenelitian']) ->name('dosen.penelitian.update');
+    // Password routes
+    Route::get('/dosen/password/edit',   [DosenProfileController::class, 'editPassword'])->name('dosen.password.edit');
+    Route::put('/dosen/password/update', [DosenProfileController::class, 'updatePassword'])->name('dosen.password.update');
 
-    Route::get('/dosen/pengabdian/edit',   [DosenProfileController::class, 'editPengabdian'])   ->name('dosen.pengabdian.edit');
-    Route::put('/dosen/pengabdian/update', [DosenProfileController::class, 'updatePengabdian']) ->name('dosen.pengabdian.update');
+    // Penelitian routes (CRUD)
+    Route::get('/dosen/penelitian/edit',      [DosenProfileController::class, 'editPenelitian'])->name('dosen.penelitian.edit');
+    Route::post('/dosen/penelitian/store',    [DosenProfileController::class, 'storePenelitian'])->name('dosen.penelitian.store');
+    Route::put('/dosen/penelitian/update/{id}', [DosenProfileController::class, 'updatePenelitian'])->name('dosen.penelitian.update');
+    Route::delete('/dosen/penelitian/destroy/{id}', [DosenProfileController::class, 'destroyPenelitian'])->name('dosen.penelitian.destroy');
 
-    Route::get('/dosen/haki/edit',   [DosenProfileController::class, 'editHaki'])   ->name('dosen.haki.edit');
-    Route::put('/dosen/haki/update', [DosenProfileController::class, 'updateHaki']) ->name('dosen.haki.update');
+    // Pengabdian routes (CRUD)
+    Route::get('/dosen/pengabdian/edit',        [DosenProfileController::class, 'editPengabdian'])->name('dosen.pengabdian.edit');
+    Route::post('/dosen/pengabdian/store',      [DosenProfileController::class, 'storePengabdian'])->name('dosen.pengabdian.store');
+    Route::put('/dosen/pengabdian/update/{id}', [DosenProfileController::class, 'updatePengabdian'])->name('dosen.pengabdian.update');
+    Route::delete('/dosen/pengabdian/destroy/{id}', [DosenProfileController::class, 'destroyPengabdian'])->name('dosen.pengabdian.destroy');
 
-    Route::get('/dosen/paten/edit',   [DosenProfileController::class, 'editPaten'])   ->name('dosen.paten.edit');
-    Route::put('/dosen/paten/update', [DosenProfileController::class, 'updatePaten']) ->name('dosen.paten.update');
+    // HAKI routes (CRUD)
+    Route::get('/dosen/haki/edit',      [DosenProfileController::class, 'editHaki'])->name('dosen.haki.edit');
+    Route::post('/dosen/haki/store',    [DosenProfileController::class, 'storeHaki'])->name('dosen.haki.store');
+    Route::put('/dosen/haki/update/{id}', [DosenProfileController::class, 'updateHaki'])->name('dosen.haki.update');
+    Route::delete('/dosen/haki/destroy/{id}', [DosenProfileController::class, 'destroyHaki'])->name('dosen.haki.destroy');
 
-    // tambahkan di dalam Route::middleware(['auth'])->group(...)
-    Route::get('/dosen/password/edit',   [DosenProfileController::class, 'editPassword'])   ->name('dosen.password.edit');
-    Route::put('/dosen/password/update', [DosenProfileController::class, 'updatePassword']) ->name('dosen.password.update');
+    // Paten routes (CRUD)
+    Route::get('/dosen/paten/edit',      [DosenProfileController::class, 'editPaten'])->name('dosen.paten.edit');
+    Route::post('/dosen/paten/store',    [DosenProfileController::class, 'storePaten'])->name('dosen.paten.store');
+    Route::put('/dosen/paten/update/{id}', [DosenProfileController::class, 'updatePaten'])->name('dosen.paten.update');
+    Route::delete('/dosen/paten/destroy/{id}', [DosenProfileController::class, 'destroyPaten'])->name('dosen.paten.destroy');
 });
