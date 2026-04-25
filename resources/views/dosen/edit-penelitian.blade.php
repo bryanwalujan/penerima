@@ -326,4 +326,8 @@
 
 @push('scripts')
     <script src="{{ asset('js/dosen.js') }}"></script>
+    <script>
+        console.log('Script section loaded');
+        console.log('toggleEditMode:', typeof window.toggleEditMode);
+    </script>
 @endpush
