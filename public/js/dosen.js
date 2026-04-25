@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Form submission with SweetAlert2
     if (importForm) {
         importForm.addEventListener('submit', function (event) {
             event.preventDefault();
@@ -32,15 +31,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 title: 'Mengimpor Data',
                 text: 'Harap tunggu, data sedang diimpor...',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+                didOpen: () => { Swal.showLoading(); }
             });
             importForm.submit();
         });
     }
 
-    // Export dropdown handling
+    // Export dropdown
     const exportBtn = document.getElementById('export-btn');
     const exportDropdown = document.getElementById('export-dropdown');
 
@@ -56,90 +53,84 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Close dropdown with ESC key
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 exportDropdown.classList.remove('show');
             }
         });
     }
+
+    // ✅ Tutup modal saat klik background — pakai addEventListener, BUKAN window.onclick
+    document.addEventListener('click', function (event) {
+        const modal = document.getElementById('deleteModal');
+        if (modal && event.target === modal) {
+            window.closeDeleteModal();
+        }
+    });
 });
 
-// Pastikan DOM sudah siap sebelum fungsi didefinisikan
-    document.addEventListener('DOMContentLoaded', function() {
-        // Tidak perlu dipindah ke sini karena fungsi onclick dipanggil global
+// ============================================
+// Fungsi global untuk onclick di HTML
+// Harus di luar DOMContentLoaded agar bisa
+// dipanggil langsung dari atribut onclick=""
+// ============================================
+
+var editStates = {};
+
+window.toggleEditMode = function (id) {
+    var form = document.getElementById('form-' + id);
+    var inputs = form.querySelectorAll('[data-editable="true"]');
+    var editButtons = document.getElementById('edit-buttons-' + id);
+    var editBtn = document.getElementById('edit-btn-' + id);
+
+    var isEditMode = editStates[id] || false;
+
+    inputs.forEach(function (input) {
+        if (input.tagName === 'SELECT') {
+            input.disabled = isEditMode;
+        } else {
+            if (isEditMode) {
+                input.setAttribute('readonly', true);
+            } else {
+                input.removeAttribute('readonly');
+            }
+        }
+        if (isEditMode) {
+            input.classList.remove('bg-white');
+            input.classList.add('bg-gray-100');
+        } else {
+            input.classList.remove('bg-gray-100');
+            input.classList.add('bg-white');
+        }
     });
 
-    // Fungsi harus berada di scope global (window)
-    let editStates = {};
-    
-    window.toggleEditMode = function(id) {
-        const form = document.getElementById(`form-${id}`);
-        const inputs = form.querySelectorAll('[data-editable="true"]');
-        const editButtons = document.getElementById(`edit-buttons-${id}`);
-        const editBtn = document.getElementById(`edit-btn-${id}`);
-        
-        const isEditMode = editStates[id] || false;
-        
-        inputs.forEach(input => {
-            if (input.tagName === 'SELECT') {
-                if (!isEditMode) {
-                    input.disabled = false;
-                    input.classList.remove('bg-gray-100');
-                    input.classList.add('bg-white');
-                } else {
-                    input.disabled = true;
-                    input.classList.remove('bg-white');
-                    input.classList.add('bg-gray-100');
-                }
-            } else {
-                if (!isEditMode) {
-                    input.removeAttribute('readonly');
-                    input.classList.remove('bg-gray-100');
-                    input.classList.add('bg-white');
-                } else {
-                    input.setAttribute('readonly', true);
-                    input.classList.remove('bg-white');
-                    input.classList.add('bg-gray-100');
-                }
-            }
-        });
-        
-        if (editButtons) {
-            if (!isEditMode) {
-                editButtons.classList.remove('hidden');
-                editBtn.innerHTML = '<i class="fas fa-times"></i> Batal Edit';
-                editBtn.classList.remove('text-blue-500', 'hover:text-blue-700');
-                editBtn.classList.add('text-orange-500', 'hover:text-orange-700');
-                editStates[id] = true;
-            } else {
-                editButtons.classList.add('hidden');
-                editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-                editBtn.classList.remove('text-orange-500', 'hover:text-orange-700');
-                editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
-                editStates[id] = false;
-            }
+    if (editButtons) {
+        if (isEditMode) {
+            editButtons.classList.add('hidden');
+            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+            editBtn.classList.remove('text-orange-500', 'hover:text-orange-700');
+            editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
+        } else {
+            editButtons.classList.remove('hidden');
+            editBtn.innerHTML = '<i class="fas fa-times"></i> Batal Edit';
+            editBtn.classList.remove('text-blue-500', 'hover:text-blue-700');
+            editBtn.classList.add('text-orange-500', 'hover:text-orange-700');
         }
-    };
-    
-    window.cancelEdit = function(id) {
-        location.reload();
-    };
-    
-    window.confirmDelete = function(url, title) {
-        document.getElementById('deleteMessage').innerHTML = 
-            `Apakah Anda yakin ingin menghapus data penelitian "<strong>${title}</strong>"?`;
-        document.getElementById('deleteForm').action = url;
-        document.getElementById('deleteModal').classList.remove('hidden');
-    };
-    
-    window.closeDeleteModal = function() {
-        document.getElementById('deleteModal').classList.add('hidden');
-    };
-    
-    window.onclick = function(event) {
-        const modal = document.getElementById('deleteModal');
-        if (event.target == modal) {
-            closeDeleteModal();
-        }
-    };
+        editStates[id] = !isEditMode;
+    }
+};
+
+window.cancelEdit = function (id) {
+    location.reload();
+};
+
+window.confirmDelete = function (url, title) {
+    document.getElementById('deleteMessage').innerHTML =
+        'Apakah Anda yakin ingin menghapus data penelitian "<strong>' + title + '</strong>"?';
+    document.getElementById('deleteForm').action = url;
+    document.getElementById('deleteModal').classList.remove('hidden');
+};
+
+window.closeDeleteModal = function () {
+    document.getElementById('deleteModal').classList.add('hidden');
+};
