@@ -64,3 +64,82 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+    // Pastikan DOM sudah siap sebelum fungsi didefinisikan
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tidak perlu dipindah ke sini karena fungsi onclick dipanggil global
+    });
+
+    // Fungsi harus berada di scope global (window)
+    let editStates = {};
+    
+    window.toggleEditMode = function(id) {
+        const form = document.getElementById(`form-${id}`);
+        const inputs = form.querySelectorAll('[data-editable="true"]');
+        const editButtons = document.getElementById(`edit-buttons-${id}`);
+        const editBtn = document.getElementById(`edit-btn-${id}`);
+        
+        const isEditMode = editStates[id] || false;
+        
+        inputs.forEach(input => {
+            if (input.tagName === 'SELECT') {
+                if (!isEditMode) {
+                    input.disabled = false;
+                    input.classList.remove('bg-gray-100');
+                    input.classList.add('bg-white');
+                } else {
+                    input.disabled = true;
+                    input.classList.remove('bg-white');
+                    input.classList.add('bg-gray-100');
+                }
+            } else {
+                if (!isEditMode) {
+                    input.removeAttribute('readonly');
+                    input.classList.remove('bg-gray-100');
+                    input.classList.add('bg-white');
+                } else {
+                    input.setAttribute('readonly', true);
+                    input.classList.remove('bg-white');
+                    input.classList.add('bg-gray-100');
+                }
+            }
+        });
+        
+        if (editButtons) {
+            if (!isEditMode) {
+                editButtons.classList.remove('hidden');
+                editBtn.innerHTML = '<i class="fas fa-times"></i> Batal Edit';
+                editBtn.classList.remove('text-blue-500', 'hover:text-blue-700');
+                editBtn.classList.add('text-orange-500', 'hover:text-orange-700');
+                editStates[id] = true;
+            } else {
+                editButtons.classList.add('hidden');
+                editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                editBtn.classList.remove('text-orange-500', 'hover:text-orange-700');
+                editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
+                editStates[id] = false;
+            }
+        }
+    };
+    
+    window.cancelEdit = function(id) {
+        location.reload();
+    };
+    
+    window.confirmDelete = function(url, title) {
+        document.getElementById('deleteMessage').innerHTML = 
+            `Apakah Anda yakin ingin menghapus data penelitian "<strong>${title}</strong>"?`;
+        document.getElementById('deleteForm').action = url;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    };
+    
+    window.closeDeleteModal = function() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    };
+    
+    window.onclick = function(event) {
+        const modal = document.getElementById('deleteModal');
+        if (event.target == modal) {
+            closeDeleteModal();
+        }
+    };
