@@ -185,8 +185,8 @@
     </div>
     <div class="p-6">
         @forelse ($pengabdians as $index => $pengabdian)
-            <div class="community-item bg-gradient-to-r from-gray-50 to-white rounded-xl border border-yellow-100 p-5 mb-4">
-                <form method="POST" action="{{ route('dosen.pengabdian.update', $pengabdian->id) }}" class="edit-form">
+            <div class="community-item bg-gradient-to-r from-gray-50 to-white rounded-xl border border-yellow-100 p-5 mb-4" id="pengabdian-{{ $pengabdian->id }}">
+                <form method="POST" action="{{ route('dosen.pengabdian.update', $pengabdian->id) }}" class="edit-form" id="form-{{ $pengabdian->id }}">
                     @csrf
                     @method('PUT')
                     
@@ -203,10 +203,10 @@
                             @endif
                         </div>
                         <div class="flex items-center gap-2">
-                            <button type="button" onclick="toggleEditMode(this)" class="text-blue-500 hover:text-blue-700 transition">
+                            <button type="button" onclick="toggleEditMode({{ $pengabdian->id }})" class="text-blue-500 hover:text-blue-700 transition" id="edit-btn-{{ $pengabdian->id }}">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            <button type="button" onclick="confirmDelete('{{ route('dosen.pengabdian.destroy', $pengabdian->id) }}', '{{ $pengabdian->judul_pengabdian }}')" 
+                            <button type="button" onclick="confirmDelete('{{ route('dosen.pengabdian.destroy', $pengabdian->id) }}', '{{ addslashes($pengabdian->judul_pengabdian) }}')" 
                                     class="text-red-500 hover:text-red-700 transition delete-btn">
                                 <i class="fas fa-trash-alt"></i> Hapus
                             </button>
@@ -218,11 +218,11 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Judul Pengabdian</label>
                             <input type="text" name="judul_pengabdian" value="{{ $pengabdian->judul_pengabdian }}" 
                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly
-                                   data-editable="true">
+                                   data-editable="true" id="judul-{{ $pengabdian->id }}">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Skema</label>
-                            <select name="skema" class="select-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" disabled data-editable="true">
+                            <select name="skema" class="select-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" disabled data-editable="true" id="skema-{{ $pengabdian->id }}">
                                 <option value="">Pilih Skema</option>
                                 <option value="-" {{ $pengabdian->skema == '-' ? 'selected' : '' }}>-</option>
                                 <option value="drtpm" {{ $pengabdian->skema == 'drtpm' ? 'selected' : '' }}>DRTPM</option>
@@ -233,16 +233,16 @@
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Posisi</label>
                             <input type="text" name="posisi" value="{{ $pengabdian->posisi }}" 
-                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true">
+                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true" id="posisi-{{ $pengabdian->id }}">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Sumber Dana</label>
                             <input type="text" name="sumber_dana" value="{{ $pengabdian->sumber_dana }}" 
-                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true">
+                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true" id="sumber-{{ $pengabdian->id }}">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                            <select name="status" class="select-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" disabled data-editable="true">
+                            <select name="status" class="select-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" disabled data-editable="true" id="status-{{ $pengabdian->id }}">
                                 <option value="">Pilih Status</option>
                                 <option value="Selesai" {{ $pengabdian->status == 'Selesai' ? 'selected' : '' }}>Selesai</option>
                                 <option value="Berjalan" {{ $pengabdian->status == 'Berjalan' ? 'selected' : '' }}>Berjalan</option>
@@ -253,18 +253,18 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Tahun</label>
                             <input type="number" name="tahun" value="{{ $pengabdian->tahun }}" 
                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true"
-                                   min="2000" max="{{ date('Y') + 5 }}">
+                                   min="2000" max="{{ date('Y') + 5 }}" id="tahun-{{ $pengabdian->id }}">
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Link Luaran</label>
                             <input type="url" name="link_luaran" value="{{ $pengabdian->link_luaran }}" 
                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true"
-                                   placeholder="https://example.com/luaran">
+                                   placeholder="https://example.com/luaran" id="link-{{ $pengabdian->id }}">
                         </div>
                     </div>
                     
-                    <div class="hidden mt-4 flex justify-end gap-3 edit-buttons">
-                        <button type="button" onclick="cancelEdit(this)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    <div class="hidden mt-4 flex justify-end gap-3 edit-buttons" id="edit-buttons-{{ $pengabdian->id }}">
+                        <button type="button" onclick="cancelEdit({{ $pengabdian->id }})" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                             Batal
                         </button>
                         <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">
@@ -313,78 +313,71 @@
 
 @section('scripts')
 <script>
-    function toggleEditMode(btn) {
-        const form = btn.closest('form');
+    let editStates = {};
+    
+    function toggleEditMode(id) {
+        const form = document.getElementById(`form-${id}`);
+        if (!form) return;
+        
         const inputs = form.querySelectorAll('[data-editable="true"]');
-        const editButtons = form.querySelector('.edit-buttons');
-        const isReadOnly = inputs[0].hasAttribute('readonly');
+        const editButtons = document.getElementById(`edit-buttons-${id}`);
+        const editBtn = document.getElementById(`edit-btn-${id}`);
+        
+        const isEditMode = editStates[id] || false;
         
         inputs.forEach(input => {
             if (input.tagName === 'SELECT') {
-                input.disabled = !isReadOnly;
-            } else {
-                if (isReadOnly) {
-                    input.removeAttribute('readonly');
-                    input.classList.remove('bg-gray-100');
-                    input.classList.add('bg-white');
+                if (isEditMode) {
+                    input.disabled = true;
                 } else {
-                    input.setAttribute('readonly', true);
-                    input.classList.remove('bg-white');
-                    input.classList.add('bg-gray-100');
+                    input.disabled = false;
                 }
+            } else {
+                if (isEditMode) {
+                    input.setAttribute('readonly', true);
+                } else {
+                    input.removeAttribute('readonly');
+                }
+            }
+            
+            if (isEditMode) {
+                input.classList.remove('bg-white');
+                input.classList.add('bg-gray-100');
+            } else {
+                input.classList.remove('bg-gray-100');
+                input.classList.add('bg-white');
             }
         });
         
         if (editButtons) {
-            editButtons.classList.toggle('hidden');
-        }
-        
-        if (isReadOnly) {
-            btn.innerHTML = '<i class="fas fa-save"></i> Simpan';
-            btn.classList.remove('text-blue-500', 'hover:text-blue-700');
-            btn.classList.add('text-green-600', 'hover:text-green-700');
-        } else {
-            btn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-            btn.classList.remove('text-green-600', 'hover:text-green-700');
-            btn.classList.add('text-blue-500', 'hover:text-blue-700');
+            if (!isEditMode) {
+                editButtons.classList.remove('hidden');
+                if (editBtn) {
+                    editBtn.innerHTML = '<i class="fas fa-times"></i> Batal Edit';
+                    editBtn.classList.remove('text-blue-500', 'hover:text-blue-700');
+                    editBtn.classList.add('text-orange-500', 'hover:text-orange-700');
+                }
+                editStates[id] = true;
+            } else {
+                editButtons.classList.add('hidden');
+                if (editBtn) {
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                    editBtn.classList.remove('text-orange-500', 'hover:text-orange-700');
+                    editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
+                }
+                editStates[id] = false;
+            }
         }
     }
     
-    function cancelEdit(btn) {
-        const form = btn.closest('form');
-        const inputs = form.querySelectorAll('[data-editable="true"]');
-        const editButtons = form.querySelector('.edit-buttons');
-        const editBtn = form.querySelector('.edit-form button[onclick*="toggleEditMode"]');
-        
-        inputs.forEach(input => {
-            if (input.tagName === 'SELECT') {
-                input.disabled = true;
-            } else {
-                input.setAttribute('readonly', true);
-                input.classList.remove('bg-white');
-                input.classList.add('bg-gray-100');
-            }
-        });
-        
-        if (editButtons) {
-            editButtons.classList.add('hidden');
-        }
-        
-        if (editBtn) {
-            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-            editBtn.classList.remove('text-green-600', 'hover:text-green-700');
-            editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
-        }
-        
-        form.reset();
+    function cancelEdit(id) {
+        location.reload();
     }
     
     let deleteUrl = '';
-    let deleteTitle = '';
     
     function confirmDelete(url, title) {
         deleteUrl = url;
-        deleteTitle = title;
         document.getElementById('deleteMessage').innerHTML = `Apakah Anda yakin ingin menghapus data pengabdian "<strong>${title}</strong>"?`;
         document.getElementById('deleteForm').action = url;
         document.getElementById('deleteModal').classList.remove('hidden');

@@ -145,8 +145,8 @@
     </div>
     <div class="p-6">
         @forelse ($hakis as $index => $haki)
-            <div class="haki-item bg-gradient-to-r from-gray-50 to-white rounded-xl border border-purple-100 p-5 mb-4">
-                <form method="POST" action="{{ route('dosen.haki.update', $haki->id) }}" class="edit-form">
+            <div class="haki-item bg-gradient-to-r from-gray-50 to-white rounded-xl border border-purple-100 p-5 mb-4" id="haki-{{ $haki->id }}">
+                <form method="POST" action="{{ route('dosen.haki.update', $haki->id) }}" class="edit-form" id="form-{{ $haki->id }}">
                     @csrf
                     @method('PUT')
                     
@@ -158,10 +158,10 @@
                             <h4 class="font-semibold text-gray-700">HAKI #{{ $index + 1 }}</h4>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button type="button" onclick="toggleEditMode(this)" class="text-blue-500 hover:text-blue-700 transition">
+                            <button type="button" onclick="toggleEditMode({{ $haki->id }})" class="text-blue-500 hover:text-blue-700 transition" id="edit-btn-{{ $haki->id }}">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            <button type="button" onclick="confirmDelete('{{ route('dosen.haki.destroy', $haki->id) }}', '{{ $haki->judul_haki }}')" 
+                            <button type="button" onclick="confirmDelete('{{ route('dosen.haki.destroy', $haki->id) }}', '{{ addslashes($haki->judul_haki) }}')" 
                                     class="text-red-500 hover:text-red-700 transition delete-btn">
                                 <i class="fas fa-trash-alt"></i> Hapus
                             </button>
@@ -173,23 +173,23 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Judul HAKI</label>
                             <input type="text" name="judul_haki" value="{{ $haki->judul_haki }}" 
                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly
-                                   data-editable="true">
+                                   data-editable="true" id="judul-{{ $haki->id }}">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Expired</label>
                             <input type="date" name="expired" value="{{ $haki->expired }}" 
-                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true">
+                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true" id="expired-{{ $haki->id }}">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Link / URL</label>
                             <input type="url" name="link" value="{{ $haki->link }}" 
                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true"
-                                   placeholder="https://example.com/haki">
+                                   placeholder="https://example.com/haki" id="link-{{ $haki->id }}">
                         </div>
                     </div>
                     
-                    <div class="hidden mt-4 flex justify-end gap-3 edit-buttons">
-                        <button type="button" onclick="cancelEdit(this)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    <div class="hidden mt-4 flex justify-end gap-3 edit-buttons" id="edit-buttons-{{ $haki->id }}">
+                        <button type="button" onclick="cancelEdit({{ $haki->id }})" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                             Batal
                         </button>
                         <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
@@ -238,72 +238,61 @@
 
 @section('scripts')
 <script>
-    function toggleEditMode(btn) {
-        const form = btn.closest('form');
+    let editStates = {};
+    
+    function toggleEditMode(id) {
+        const form = document.getElementById(`form-${id}`);
+        if (!form) return;
+        
         const inputs = form.querySelectorAll('[data-editable="true"]');
-        const editButtons = form.querySelector('.edit-buttons');
-        const isReadOnly = inputs[0].hasAttribute('readonly');
+        const editButtons = document.getElementById(`edit-buttons-${id}`);
+        const editBtn = document.getElementById(`edit-btn-${id}`);
+        
+        const isEditMode = editStates[id] || false;
         
         inputs.forEach(input => {
-            if (input.hasAttribute('readonly')) {
-                if (isReadOnly) {
-                    input.removeAttribute('readonly');
-                    input.classList.remove('bg-gray-100');
-                    input.classList.add('bg-white');
-                } else {
-                    input.setAttribute('readonly', true);
-                    input.classList.remove('bg-white');
-                    input.classList.add('bg-gray-100');
-                }
+            if (isEditMode) {
+                // Exit edit mode (cancel)
+                input.setAttribute('readonly', true);
+                input.classList.remove('bg-white');
+                input.classList.add('bg-gray-100');
+            } else {
+                // Enter edit mode
+                input.removeAttribute('readonly');
+                input.classList.remove('bg-gray-100');
+                input.classList.add('bg-white');
             }
         });
         
         if (editButtons) {
-            editButtons.classList.toggle('hidden');
-        }
-        
-        if (isReadOnly) {
-            btn.innerHTML = '<i class="fas fa-save"></i> Simpan';
-            btn.classList.remove('text-blue-500', 'hover:text-blue-700');
-            btn.classList.add('text-green-600', 'hover:text-green-700');
-        } else {
-            btn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-            btn.classList.remove('text-green-600', 'hover:text-green-700');
-            btn.classList.add('text-blue-500', 'hover:text-blue-700');
+            if (!isEditMode) {
+                editButtons.classList.remove('hidden');
+                if (editBtn) {
+                    editBtn.innerHTML = '<i class="fas fa-times"></i> Batal Edit';
+                    editBtn.classList.remove('text-blue-500', 'hover:text-blue-700');
+                    editBtn.classList.add('text-orange-500', 'hover:text-orange-700');
+                }
+                editStates[id] = true;
+            } else {
+                editButtons.classList.add('hidden');
+                if (editBtn) {
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                    editBtn.classList.remove('text-orange-500', 'hover:text-orange-700');
+                    editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
+                }
+                editStates[id] = false;
+            }
         }
     }
     
-    function cancelEdit(btn) {
-        const form = btn.closest('form');
-        const inputs = form.querySelectorAll('[data-editable="true"]');
-        const editButtons = form.querySelector('.edit-buttons');
-        const editBtn = form.querySelector('.edit-form button[onclick*="toggleEditMode"]');
-        
-        inputs.forEach(input => {
-            input.setAttribute('readonly', true);
-            input.classList.remove('bg-white');
-            input.classList.add('bg-gray-100');
-        });
-        
-        if (editButtons) {
-            editButtons.classList.add('hidden');
-        }
-        
-        if (editBtn) {
-            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-            editBtn.classList.remove('text-green-600', 'hover:text-green-700');
-            editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
-        }
-        
-        form.reset();
+    function cancelEdit(id) {
+        location.reload();
     }
     
     let deleteUrl = '';
-    let deleteTitle = '';
     
     function confirmDelete(url, title) {
         deleteUrl = url;
-        deleteTitle = title;
         document.getElementById('deleteMessage').innerHTML = `Apakah Anda yakin ingin menghapus data HAKI "<strong>${title}</strong>"?`;
         document.getElementById('deleteForm').action = url;
         document.getElementById('deleteModal').classList.remove('hidden');

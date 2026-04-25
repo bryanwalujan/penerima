@@ -39,6 +39,10 @@
     .modal-transition {
         transition: all 0.3s ease;
     }
+    .edit-mode-active .input-field, 
+    .edit-mode-active .select-field {
+        background-color: white !important;
+    }
 </style>
 @endsection
 
@@ -67,6 +71,15 @@
         <div class="flex items-center">
             <i class="fas fa-check-circle text-green-500 text-xl mr-3"></i>
             <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+        </div>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 p-5 mb-6 rounded-xl shadow-sm">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3"></i>
+            <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
         </div>
     </div>
 @endif
@@ -185,8 +198,8 @@
     </div>
     <div class="p-6">
         @forelse ($penelitians as $index => $penelitian)
-            <div class="research-item bg-gradient-to-r from-gray-50 to-white rounded-xl border border-green-100 p-5 mb-4">
-                <form method="POST" action="{{ route('dosen.penelitian.update', $penelitian->id) }}" class="edit-form">
+            <div class="research-item bg-gradient-to-r from-gray-50 to-white rounded-xl border border-green-100 p-5 mb-4" id="research-{{ $penelitian->id }}">
+                <form method="POST" action="{{ route('dosen.penelitian.update', $penelitian->id) }}" class="edit-form" id="form-{{ $penelitian->id }}">
                     @csrf
                     @method('PUT')
                     
@@ -203,10 +216,10 @@
                             @endif
                         </div>
                         <div class="flex items-center gap-2">
-                            <button type="button" onclick="toggleEditMode(this)" class="text-blue-500 hover:text-blue-700 transition">
+                            <button type="button" onclick="toggleEditMode({{ $penelitian->id }})" class="text-blue-500 hover:text-blue-700 transition" id="edit-btn-{{ $penelitian->id }}">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            <button type="button" onclick="confirmDelete('{{ route('dosen.penelitian.destroy', $penelitian->id) }}', '{{ $penelitian->judul_penelitian }}')" 
+                            <button type="button" onclick="confirmDelete('{{ route('dosen.penelitian.destroy', $penelitian->id) }}', '{{ addslashes($penelitian->judul_penelitian) }}')" 
                                     class="text-red-500 hover:text-red-700 transition delete-btn">
                                 <i class="fas fa-trash-alt"></i> Hapus
                             </button>
@@ -218,11 +231,11 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Judul Penelitian</label>
                             <input type="text" name="judul_penelitian" value="{{ $penelitian->judul_penelitian }}" 
                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly
-                                   data-editable="true">
+                                   data-editable="true" id="judul-{{ $penelitian->id }}">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Skema</label>
-                            <select name="skema" class="select-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" disabled data-editable="true">
+                            <select name="skema" class="select-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" disabled data-editable="true" id="skema-{{ $penelitian->id }}">
                                 <option value="">Pilih Skema</option>
                                 <option value="-" {{ $penelitian->skema == '-' ? 'selected' : '' }}>-</option>
                                 <option value="drtpm" {{ $penelitian->skema == 'drtpm' ? 'selected' : '' }}>DRTPM</option>
@@ -233,16 +246,16 @@
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Posisi</label>
                             <input type="text" name="posisi" value="{{ $penelitian->posisi }}" 
-                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true">
+                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true" id="posisi-{{ $penelitian->id }}">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Sumber Dana</label>
                             <input type="text" name="sumber_dana" value="{{ $penelitian->sumber_dana }}" 
-                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true">
+                                   class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true" id="sumber-{{ $penelitian->id }}">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                            <select name="status" class="select-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" disabled data-editable="true">
+                            <select name="status" class="select-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" disabled data-editable="true" id="status-{{ $penelitian->id }}">
                                 <option value="">Pilih Status</option>
                                 <option value="Selesai" {{ $penelitian->status == 'Selesai' ? 'selected' : '' }}>Selesai</option>
                                 <option value="Berjalan" {{ $penelitian->status == 'Berjalan' ? 'selected' : '' }}>Berjalan</option>
@@ -253,18 +266,18 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Tahun</label>
                             <input type="number" name="tahun" value="{{ $penelitian->tahun }}" 
                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true"
-                                   min="2000" max="{{ date('Y') + 5 }}">
+                                   min="2000" max="{{ date('Y') + 5 }}" id="tahun-{{ $penelitian->id }}">
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Link Luaran</label>
                             <input type="url" name="link_luaran" value="{{ $penelitian->link_luaran }}" 
                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100" readonly data-editable="true"
-                                   placeholder="https://doi.org/...">
+                                   placeholder="https://doi.org/..." id="link-{{ $penelitian->id }}">
                         </div>
                     </div>
                     
-                    <div class="hidden mt-4 flex justify-end gap-3 edit-buttons">
-                        <button type="button" onclick="cancelEdit(this)" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    <div class="hidden mt-4 flex justify-end gap-3 edit-buttons" id="edit-buttons-{{ $penelitian->id }}">
+                        <button type="button" onclick="cancelEdit({{ $penelitian->id }})" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                             Batal
                         </button>
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
@@ -313,21 +326,39 @@
 
 @section('scripts')
 <script>
-    function toggleEditMode(btn) {
-        const form = btn.closest('form');
+    // Store edit states for each item
+    let editStates = {};
+    
+    function toggleEditMode(id) {
+        const form = document.getElementById(`form-${id}`);
         const inputs = form.querySelectorAll('[data-editable="true"]');
-        const editButtons = form.querySelector('.edit-buttons');
-        const isReadOnly = inputs[0].hasAttribute('readonly');
+        const editButtons = document.getElementById(`edit-buttons-${id}`);
+        const editBtn = document.getElementById(`edit-btn-${id}`);
+        
+        // Check if currently in edit mode
+        const isEditMode = editStates[id] || false;
         
         inputs.forEach(input => {
             if (input.tagName === 'SELECT') {
-                input.disabled = !isReadOnly;
+                if (!isEditMode) {
+                    // Enter edit mode
+                    input.disabled = false;
+                    input.classList.remove('bg-gray-100');
+                    input.classList.add('bg-white');
+                } else {
+                    // Exit edit mode (cancel)
+                    input.disabled = true;
+                    input.classList.remove('bg-white');
+                    input.classList.add('bg-gray-100');
+                }
             } else {
-                if (isReadOnly) {
+                if (!isEditMode) {
+                    // Enter edit mode
                     input.removeAttribute('readonly');
                     input.classList.remove('bg-gray-100');
                     input.classList.add('bg-white');
                 } else {
+                    // Exit edit mode (cancel)
                     input.setAttribute('readonly', true);
                     input.classList.remove('bg-white');
                     input.classList.add('bg-gray-100');
@@ -336,48 +367,31 @@
         });
         
         if (editButtons) {
-            editButtons.classList.toggle('hidden');
-        }
-        
-        if (isReadOnly) {
-            btn.innerHTML = '<i class="fas fa-save"></i> Simpan';
-            btn.classList.remove('text-blue-500', 'hover:text-blue-700');
-            btn.classList.add('text-green-600', 'hover:text-green-700');
-        } else {
-            btn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-            btn.classList.remove('text-green-600', 'hover:text-green-700');
-            btn.classList.add('text-blue-500', 'hover:text-blue-700');
+            if (!isEditMode) {
+                editButtons.classList.remove('hidden');
+                editBtn.innerHTML = '<i class="fas fa-times"></i> Batal Edit';
+                editBtn.classList.remove('text-blue-500', 'hover:text-blue-700');
+                editBtn.classList.add('text-orange-500', 'hover:text-orange-700');
+                editStates[id] = true;
+            } else {
+                editButtons.classList.add('hidden');
+                editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                editBtn.classList.remove('text-orange-500', 'hover:text-orange-700');
+                editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
+                editStates[id] = false;
+            }
         }
     }
     
-    function cancelEdit(btn) {
-        const form = btn.closest('form');
+    function cancelEdit(id) {
+        const form = document.getElementById(`form-${id}`);
         const inputs = form.querySelectorAll('[data-editable="true"]');
-        const editButtons = form.querySelector('.edit-buttons');
-        const editBtn = form.querySelector('.edit-form button[onclick*="toggleEditMode"]');
+        const editButtons = document.getElementById(`edit-buttons-${id}`);
+        const editBtn = document.getElementById(`edit-btn-${id}`);
         
-        inputs.forEach(input => {
-            if (input.tagName === 'SELECT') {
-                input.disabled = true;
-            } else {
-                input.setAttribute('readonly', true);
-                input.classList.remove('bg-white');
-                input.classList.add('bg-gray-100');
-            }
-        });
-        
-        if (editButtons) {
-            editButtons.classList.add('hidden');
-        }
-        
-        if (editBtn) {
-            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-            editBtn.classList.remove('text-green-600', 'hover:text-green-700');
-            editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
-        }
-        
-        // Reset form ke nilai awal
-        form.reset();
+        // Reset all inputs to original values (reload from page or store original)
+        // Since we're reloading the page after successful update, we can just reload
+        location.reload();
     }
     
     let deleteUrl = '';
