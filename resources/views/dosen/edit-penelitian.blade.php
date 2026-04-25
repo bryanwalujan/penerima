@@ -325,9 +325,62 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/dosen.js') }}"></script>
-    <script>
-        console.log('Script section loaded');
-        console.log('toggleEditMode:', typeof window.toggleEditMode);
-    </script>
+<script>
+    var editStates = {};
+
+    window.toggleEditMode = function (id) {
+        var form = document.getElementById('form-' + id);
+        var inputs = form.querySelectorAll('[data-editable="true"]');
+        var editButtons = document.getElementById('edit-buttons-' + id);
+        var editBtn = document.getElementById('edit-btn-' + id);
+        var isEditMode = editStates[id] || false;
+
+        inputs.forEach(function (input) {
+            if (input.tagName === 'SELECT') {
+                input.disabled = isEditMode;
+            } else {
+                isEditMode ? input.setAttribute('readonly', true) : input.removeAttribute('readonly');
+            }
+            input.classList.toggle('bg-gray-100', isEditMode);
+            input.classList.toggle('bg-white', !isEditMode);
+        });
+
+        if (editButtons) {
+            if (isEditMode) {
+                editButtons.classList.add('hidden');
+                editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                editBtn.classList.remove('text-orange-500', 'hover:text-orange-700');
+                editBtn.classList.add('text-blue-500', 'hover:text-blue-700');
+            } else {
+                editButtons.classList.remove('hidden');
+                editBtn.innerHTML = '<i class="fas fa-times"></i> Batal Edit';
+                editBtn.classList.remove('text-blue-500', 'hover:text-blue-700');
+                editBtn.classList.add('text-orange-500', 'hover:text-orange-700');
+            }
+            editStates[id] = !isEditMode;
+        }
+    };
+
+    window.cancelEdit = function (id) {
+        location.reload();
+    };
+
+    window.confirmDelete = function (url, title) {
+        document.getElementById('deleteMessage').innerHTML =
+            'Apakah Anda yakin ingin menghapus data penelitian "<strong>' + title + '</strong>"?';
+        document.getElementById('deleteForm').action = url;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    };
+
+    window.closeDeleteModal = function () {
+        document.getElementById('deleteModal').classList.add('hidden');
+    };
+
+    document.addEventListener('click', function (event) {
+        var modal = document.getElementById('deleteModal');
+        if (modal && event.target === modal) {
+            window.closeDeleteModal();
+        }
+    });
+</script>
 @endpush
