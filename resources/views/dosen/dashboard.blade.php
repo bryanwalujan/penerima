@@ -1,228 +1,344 @@
-<!DOCTYPE html>
-<html lang="id">
+{{-- resources/views/dosen/dashboard.blade.php --}}
+@extends('layouts.dosen.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Dosen | Repositori Dosen - Universitas Negeri Manado</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@section('title', 'Dashboard Dosen - Repositori Dosen')
 
-        :root {
-            --unima-blue: #1e3a8a;
-            --unima-gold: #d4af37;
-            --unima-light-blue: #3b82f6;
-        }
+@section('header-title', 'Dashboard')
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
-            background-attachment: fixed;
-        }
+@section('styles')
+<style>
+    :root {
+        --unima-blue: #1e3a8a;
+        --unima-gold: #d4af37;
+        --unima-light-blue: #3b82f6;
+    }
 
-        .dashboard-card {
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            border-radius: 16px;
-            overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
+    .dashboard-stats-card {
+        transition: all 0.3s ease;
+        border-radius: 20px;
+    }
+    .dashboard-stats-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.15);
+    }
+    
+    .info-card {
+        transition: all 0.3s ease;
+        border-radius: 16px;
+    }
+    .info-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-dashboard {
+        transition: all 0.3s ease;
+        border-radius: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+    }
+    .btn-dashboard:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .profile-image {
+        transition: all 0.3s ease;
+    }
+    .profile-image:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 25px rgba(30, 58, 138, 0.2);
+    }
+    
+    .welcome-badge {
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+        border-radius: 12px;
+    }
+    
+    /* Animasi untuk icon background */
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(5deg); }
+    }
+    .floating-icon {
+        animation: float 8s ease-in-out infinite;
+    }
+    .floating-icon-delayed {
+        animation: float 10s ease-in-out infinite 2s;
+    }
+</style>
+@endsection
 
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .gradient-bg {
-            background: linear-gradient(135deg, var(--unima-blue) 0%, #0f2c6e 100%);
-        }
-
-        .btn-action {
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-            border-radius: 10px;
-        }
-
-        .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(30, 58, 138, 0.3);
-        }
-
-        .floating {
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0% {
-                transform: translateY(0px);
-            }
-            50% {
-                transform: translateY(-15px);
-            }
-            100% {
-                transform: translateY(0px);
-            }
-        }
-    </style>
-</head>
-
-<body class="min-h-screen flex items-center justify-center p-4">
-    <div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-blue-50 to-transparent z-0"></div>
-
-    <div class="absolute top-20 left-10 w-16 h-16 rounded-full bg-blue-200 opacity-20 floating"></div>
-    <div class="absolute bottom-20 right-10 w-24 h-24 rounded-full bg-blue-200 opacity-15 floating" style="animation-delay: 2s;"></div>
-
-    <div class="relative z-10 w-full max-w-2xl">
-        <div class="dashboard-card bg-white">
-
-            {{-- Header --}}
-            <div class="gradient-bg text-white p-6 text-center relative overflow-hidden">
-                <div class="absolute top-0 right-0 opacity-20">
-                    <i class="fas fa-user-graduate text-[100px]"></i>
-                </div>
-                <h2 class="text-2xl font-bold relative z-10 flex items-center justify-center">
-                    <i class="fas fa-tachometer-alt mr-3"></i> Dashboard Dosen
-                </h2>
-                <p class="text-blue-100 mt-2 relative z-10">
-                    Selamat datang, {{ $dosen->nama ?? 'Dosen' }}
-                </p>
-            </div>
-
-            {{-- Body --}}
-            <div class="p-8">
-
-                @if (session('success'))
-                    <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
-                        <div class="flex items-center">
-                            <i class="fas fa-check-circle mr-3 text-xl"></i>
-                            <p>{{ session('success') }}</p>
-                        </div>
-                    </div>
-                @endif
-
-                @if (session('error'))
-                    <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
-                        <div class="flex items-center">
-                            <i class="fas fa-exclamation-circle mr-3 text-xl"></i>
-                            <p>{{ session('error') }}</p>
-                        </div>
-                    </div>
-                @endif
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    {{-- Informasi Pribadi --}}
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-lg font-semibold mb-4 text-gray-700">
-                            <i class="fas fa-id-card mr-2 text-blue-600"></i> Informasi Pribadi
-                        </h3>
-
-                        {{-- Foto --}}
-                        <div class="flex justify-center mb-4">
-                            @if ($dosen && $dosen->foto)
-                                <img src="{{ asset('storage/' . $dosen->foto) }}"
-                                     alt="Foto Dosen"
-                                     class="w-24 h-24 object-cover rounded-full border-4 border-blue-200 shadow">
-                            @else
-                                <div class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200 shadow">
-                                    <i class="fas fa-user text-blue-400 text-3xl"></i>
-                                </div>
-                            @endif
-                        </div>
-
-                        <div class="space-y-2 text-sm text-gray-700">
-                            <p>
-                                <span class="font-semibold text-gray-500">Nama</span><br>
-                                {{ $dosen->nama ?? 'Tidak tersedia' }}
-                            </p>
-                            <p>
-                                <span class="font-semibold text-gray-500">Email</span><br>
-                                {{ $dosen->email ?? 'Tidak tersedia' }}
-                            </p>
-                            <p>
-                                <span class="font-semibold text-gray-500">NIDN</span><br>
-                                {{ $dosen->nidn ?? 'Tidak tersedia' }}
-                            </p>
-                            <p>
-                                <span class="font-semibold text-gray-500">NIP</span><br>
-                                {{ $dosen->nip ?? 'Tidak tersedia' }}
-                            </p>
-                            <p>
-                                <span class="font-semibold text-gray-500">NUPTK</span><br>
-                                {{ $dosen->nuptk ?? 'Tidak tersedia' }}
-                            </p>
-                        </div>
-                    </div>
-
-                    {{-- Aksi Cepat --}}
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-lg font-semibold mb-4 text-gray-700">
-                            <i class="fas fa-bolt mr-2 text-yellow-500"></i> Aksi Cepat
-                        </h3>
-
-                        <a href="{{ route('dosen.edit') }}"
-                           class="btn-action w-full bg-green-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-green-700">
-                            <i class="fas fa-edit mr-2"></i> Edit Profil
-                        </a>
-
-                        <a href="{{ route('dosen.penelitian.edit') }}"
-                           class="btn-action w-full bg-blue-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-blue-700">
-                            <i class="fas fa-flask mr-2"></i>
-                            Penelitian
-                            <span class="ml-auto bg-blue-800 text-xs px-2 py-0.5 rounded-full">
-                                {{ $dosen->penelitians->count() }}
-                            </span>
-                        </a>
-
-                        <a href="{{ route('dosen.pengabdian.edit') }}"
-                           class="btn-action w-full bg-yellow-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-yellow-700">
-                            <i class="fas fa-hands-helping mr-2"></i>
-                            Pengabdian
-                            <span class="ml-auto bg-yellow-800 text-xs px-2 py-0.5 rounded-full">
-                                {{ $dosen->pengabdians->count() }}
-                            </span>
-                        </a>
-
-                        <a href="{{ route('dosen.haki.edit') }}"
-                           class="btn-action w-full bg-purple-600 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-purple-700">
-                            <i class="fas fa-copyright mr-2"></i>
-                            HAKI
-                            <span class="ml-auto bg-purple-800 text-xs px-2 py-0.5 rounded-full">
-                                {{ $dosen->hakis->count() }}
-                            </span>
-                        </a>
-
-                        <a href="{{ route('dosen.paten.edit') }}"
-                           class="btn-action w-full bg-red-500 text-white py-3 px-4 rounded-lg flex items-center justify-center mb-3 hover:bg-red-600">
-                            <i class="fas fa-certificate mr-2"></i>
-                            Paten
-                            <span class="ml-auto bg-red-700 text-xs px-2 py-0.5 rounded-full">
-                                {{ $dosen->patens->count() }}
-                            </span>
-                        </a>
-
-                        <form action="{{ route('logout') }}" method="POST" class="w-full mt-2">
-                            @csrf
-                            <button type="submit"
-                                class="btn-action w-full bg-gray-700 text-white py-3 px-4 rounded-lg flex items-center justify-center hover:bg-gray-800">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                            </button>
-                        </form>
-                    </div>
-
-                </div>
-            </div>
-
-            {{-- Footer --}}
-            <div class="bg-gray-50 px-6 py-4 text-center border-t">
-                <p class="text-sm text-gray-500">
-                    © 2025 Repositori Dosen — Teknik Informatika UNIMA
-                </p>
-            </div>
-
+@section('content')
+{{-- Welcome Section --}}
+<div class="mb-8">
+    <div class="welcome-badge p-6 flex flex-col md:flex-row justify-between items-start md:items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-chalkboard-user text-blue-600 mr-3"></i>
+                Selamat Datang, {{ $dosen->nama ?? 'Dosen' }}!
+            </h1>
+            <p class="text-gray-600 mt-2">
+                <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>
+                {{ now()->translatedFormat('l, d F Y') }}
+            </p>
+        </div>
+        <div class="mt-4 md:mt-0">
+            <span class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                <i class="fas fa-graduation-cap mr-2"></i> Dashboard Dosen
+            </span>
         </div>
     </div>
-</body>
-</html>
+</div>
+
+{{-- Statistics Cards --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-md p-5 dashboard-stats-card border-l-4 border-blue-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total Penelitian</p>
+                <p class="text-3xl font-bold text-gray-800 mt-1">{{ $dosen->penelitians->count() }}</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-flask text-blue-600 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-md p-5 dashboard-stats-card border-l-4 border-green-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total Pengabdian</p>
+                <p class="text-3xl font-bold text-gray-800 mt-1">{{ $dosen->pengabdians->count() }}</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-hands-helping text-green-600 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-md p-5 dashboard-stats-card border-l-4 border-purple-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total HAKI</p>
+                <p class="text-3xl font-bold text-gray-800 mt-1">{{ $dosen->hakis->count() }}</p>
+            </div>
+            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-copyright text-purple-600 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-md p-5 dashboard-stats-card border-l-4 border-red-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total Paten</p>
+                <p class="text-3xl font-bold text-gray-800 mt-1">{{ $dosen->patens->count() }}</p>
+            </div>
+            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-certificate text-red-600 text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Main Content Grid --}}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    {{-- Informasi Pribadi --}}
+    <div class="lg:col-span-1">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden info-card">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <h3 class="text-lg font-semibold text-white flex items-center">
+                    <i class="fas fa-id-card mr-2"></i> Informasi Pribadi
+                </h3>
+            </div>
+            <div class="p-6">
+                {{-- Foto Profil --}}
+                <div class="flex justify-center mb-6">
+                    @if ($dosen && $dosen->foto)
+                        <img src="{{ Storage::url($dosen->foto) }}"
+                             alt="Foto {{ $dosen->nama }}"
+                             class="profile-image w-32 h-32 object-cover rounded-full border-4 border-blue-200 shadow-lg">
+                    @else
+                        <div class="profile-image w-32 h-32 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border-4 border-blue-200 shadow-lg">
+                            <i class="fas fa-user-graduate text-blue-500 text-5xl"></i>
+                        </div>
+                    @endif
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="border-b border-gray-100 pb-3">
+                        <label class="text-xs text-gray-500 uppercase font-semibold">Nama Lengkap</label>
+                        <p class="text-gray-800 font-medium mt-1">{{ $dosen->nama ?? 'Tidak tersedia' }}</p>
+                    </div>
+                    <div class="border-b border-gray-100 pb-3">
+                        <label class="text-xs text-gray-500 uppercase font-semibold">Email</label>
+                        <p class="text-gray-800 font-medium mt-1">{{ $dosen->email ?? 'Tidak tersedia' }}</p>
+                    </div>
+                    <div class="border-b border-gray-100 pb-3">
+                        <label class="text-xs text-gray-500 uppercase font-semibold">NIDN</label>
+                        <p class="text-gray-800 font-medium mt-1">{{ $dosen->nidn ?? 'Tidak tersedia' }}</p>
+                    </div>
+                    <div class="border-b border-gray-100 pb-3">
+                        <label class="text-xs text-gray-500 uppercase font-semibold">NIP</label>
+                        <p class="text-gray-800 font-medium mt-1">{{ $dosen->nip ?? 'Tidak tersedia' }}</p>
+                    </div>
+                    <div class="pb-2">
+                        <label class="text-xs text-gray-500 uppercase font-semibold">NUPTK</label>
+                        <p class="text-gray-800 font-medium mt-1">{{ $dosen->nuptk ?? 'Tidak tersedia' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {{-- Aksi Cepat & Aktivitas --}}
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden info-card">
+            <div class="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
+                <h3 class="text-lg font-semibold text-white flex items-center">
+                    <i class="fas fa-bolt mr-2 text-yellow-400"></i> Menu Aksi Cepat
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a href="{{ route('dosen.edit') }}"
+                       class="btn-dashboard flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-white rounded-lg border border-green-200 hover:border-green-400 hover:bg-green-50 transition-all group">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user-edit text-green-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">Edit Profil</p>
+                                <p class="text-xs text-gray-500">Perbarui informasi pribadi</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400 group-hover:text-green-600 transition-colors"></i>
+                    </a>
+                    
+                    <a href="{{ route('dosen.penelitian.edit') }}"
+                       class="btn-dashboard flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all group">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-flask text-blue-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">Penelitian</p>
+                                <p class="text-xs text-gray-500">Kelola data penelitian</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">{{ $dosen->penelitians->count() }}</span>
+                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-blue-600 transition-colors"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ route('dosen.pengabdian.edit') }}"
+                       class="btn-dashboard flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-white rounded-lg border border-yellow-200 hover:border-yellow-400 hover:bg-yellow-50 transition-all group">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-hands-helping text-yellow-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">Pengabdian</p>
+                                <p class="text-xs text-gray-500">Kelola data pengabdian</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-yellow-600 text-white text-xs px-2 py-1 rounded-full">{{ $dosen->pengabdians->count() }}</span>
+                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-yellow-600 transition-colors"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ route('dosen.haki.edit') }}"
+                       class="btn-dashboard flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-white rounded-lg border border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-all group">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-copyright text-purple-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">HAKI</p>
+                                <p class="text-xs text-gray-500">Kelola data HAKI</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-purple-600 text-white text-xs px-2 py-1 rounded-full">{{ $dosen->hakis->count() }}</span>
+                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-purple-600 transition-colors"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ route('dosen.paten.edit') }}"
+                       class="btn-dashboard flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-white rounded-lg border border-red-200 hover:border-red-400 hover:bg-red-50 transition-all group">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-certificate text-red-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">Paten</p>
+                                <p class="text-xs text-gray-500">Kelola data paten</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-red-600 text-white text-xs px-2 py-1 rounded-full">{{ $dosen->patens->count() }}</span>
+                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-red-600 transition-colors"></i>
+                        </div>
+                    </a>
+                    
+                    <form action="{{ route('logout') }}" method="POST" class="contents">
+                        @csrf
+                        <button type="submit"
+                                class="btn-dashboard flex items-center justify-between p-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg border border-gray-300 hover:border-gray-500 hover:bg-gray-200 transition-all group w-full">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-sign-out-alt text-gray-700 text-lg"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-800">Logout</p>
+                                    <p class="text-xs text-gray-500">Keluar dari sistem</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-gray-700 transition-colors"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        {{-- Statistik Singkat --}}
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden info-card mt-6">
+            <div class="bg-gradient-to-r from-teal-600 to-teal-700 px-6 py-4">
+                <h3 class="text-lg font-semibold text-white flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i> Ringkasan Aktivitas
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <p class="text-2xl font-bold text-blue-600">{{ $dosen->penelitians->count() + $dosen->pengabdians->count() }}</p>
+                        <p class="text-xs text-gray-600 mt-1">Total Karya</p>
+                    </div>
+                    <div class="text-center p-3 bg-purple-50 rounded-lg">
+                        <p class="text-2xl font-bold text-purple-600">{{ $dosen->hakis->count() + $dosen->patens->count() }}</p>
+                        <p class="text-xs text-gray-600 mt-1">Total Kekayaan Intelektual</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+    // Notifikasi jika ada session success atau error
+    @if(session('success'))
+        // Toast notifikasi bisa ditambahkan di sini jika diperlukan
+        console.log('Success: {{ session('success') }}');
+    @endif
+    
+    @if(session('error'))
+        console.log('Error: {{ session('error') }}');
+    @endif
+</script>
+@endsection
