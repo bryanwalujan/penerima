@@ -287,4 +287,42 @@ private function getFileStoragePath($filePath)
     
     return null;
 }
+
+// Tambahkan method untuk preview proposal
+public function previewProposal(Skripsi $skripsi)
+{
+    if (!$skripsi->file_proposal) {
+        abort(404, 'File proposal tidak ditemukan');
+    }
+
+    $disk = $this->getDiskWhereFileExists($skripsi->file_proposal);
+    
+    if ($disk) {
+        $file = Storage::disk($disk)->get($skripsi->file_proposal);
+        $mimeType = Storage::disk($disk)->mimeType($skripsi->file_proposal);
+        
+        return response($file, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Content-Disposition', 'inline; filename="Proposal_' . $skripsi->nama_mahasiswa . '.pdf"');
+    }
+    
+    abort(404, 'File proposal tidak ditemukan di storage');
+}
+
+// Tambahkan method untuk download proposal
+public function downloadProposal(Skripsi $skripsi)
+{
+    if (!$skripsi->file_proposal) {
+        abort(404, 'File proposal tidak ditemukan');
+    }
+
+    $disk = $this->getDiskWhereFileExists($skripsi->file_proposal);
+    
+    if ($disk) {
+        $fileName = "Proposal_{$skripsi->nama_mahasiswa}_{$skripsi->nim}.pdf";
+        return Storage::disk($disk)->download($skripsi->file_proposal, $fileName);
+    }
+    
+    abort(404, 'File proposal tidak ditemukan di storage');
+}
 } 

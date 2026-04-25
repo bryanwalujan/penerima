@@ -108,17 +108,20 @@ class SkripsiSyncService
         'skripsi' => [
             'folder' => 'skripsi',
             'filename' => 'Skripsi.pdf',
-            'label' => 'Skripsi'
+            'label' => 'Skripsi',
+            'db_field' => 'file_skripsi'
         ],
         'sk_pembimbing' => [
             'folder' => 'sk_pembimbing',
             'filename' => 'SK_Pembimbing.pdf',
-            'label' => 'SK_Pembimbing'
+            'label' => 'SK_Pembimbing',
+            'db_field' => 'file_sk_pembimbing'
         ],
         'proposal' => [
-            'folder' => 'proposal',
+            'folder' => 'proposal',  // ✅ Folder terpisah untuk proposal
             'filename' => 'Proposal.pdf',
-            'label' => 'Proposal'
+            'label' => 'Proposal',
+            'db_field' => 'file_proposal'
         ],
     ];
 
@@ -126,6 +129,7 @@ class SkripsiSyncService
         $fileData = $filesBase64[$fileKey] ?? null;
         
         if (!$fileData) {
+            Log::info("[SkripsiSync] File {$fileKey} tidak ada dalam payload");
             continue;
         }
 
@@ -133,11 +137,9 @@ class SkripsiSyncService
         $base64 = null;
         
         if (is_string($fileData)) {
-            // Format 1: Langsung string base64
             $base64 = $fileData;
             Log::info("[SkripsiSync] Format string untuk {$fileKey}");
         } elseif (is_array($fileData) && isset($fileData['content'])) {
-            // Format 2: Array dengan key content
             $base64 = $fileData['content'];
             Log::info("[SkripsiSync] Format array untuk {$fileKey}", [
                 'folder' => $fileData['folder'] ?? $config['folder'],
@@ -149,6 +151,7 @@ class SkripsiSyncService
         }
 
         if (!$base64) {
+            Log::warning("[SkripsiSync] Base64 kosong untuk {$fileKey}");
             continue;
         }
 
@@ -157,6 +160,12 @@ class SkripsiSyncService
             if ($decoded === false) {
                 Log::warning("[SkripsiSync] Base64 decode gagal untuk {$fileKey}");
                 continue;
+            }
+
+            // Buat direktori jika belum ada
+            $fullFolderPath = storage_path("app/private/{$config['folder']}/{$slug}");
+            if (!file_exists($fullFolderPath)) {
+                mkdir($fullFolderPath, 0755, true);
             }
 
             $path = "{$config['folder']}/{$slug}/{$config['filename']}";
