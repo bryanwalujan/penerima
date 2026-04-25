@@ -86,18 +86,20 @@
         <div class="px-6 mt-4 mb-2">
             <span class="text-xs text-blue-300 uppercase tracking-wider">Akun</span>
         </div>
- 
+
         {{-- Manajemen Akun --}}
         <a href="{{ route('admin.akun.index') }}" class="nav-link flex items-center py-3 px-6 transition-all duration-300 {{ request()->routeIs('admin.akun.*') && !request()->routeIs('admin.password.*') ? 'active' : '' }}">
             <i class="fas fa-users-cog text-blue-300 mr-3 w-5"></i>
             <span>Manajemen Akun</span>
         </a>
- 
+
         {{-- Ganti Password --}}
         <a href="{{ route('admin.password.edit') }}" class="nav-link flex items-center py-3 px-6 transition-all duration-300 {{ request()->routeIs('admin.password.*') ? 'active' : '' }}">
             <i class="fas fa-lock text-blue-300 mr-3 w-5"></i>
             <span>Ganti Password</span>
         </a>
+
+    </div>{{-- akhir .sidebar-menu --}}
 
     <div class="absolute bottom-0 w-full p-4 border-t border-blue-700">
         <div class="flex items-center">
@@ -116,7 +118,8 @@
             </button>
         </form>
     </div>
-</div>
+
+</div>{{-- akhir .sidebar --}}
 
 <style>
     .sidebar-menu .nav-link {
