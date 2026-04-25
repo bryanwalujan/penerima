@@ -201,7 +201,7 @@
             
             {{-- Footer Menu --}}
             <div class="p-4 border-t border-gray-100">
-                <form action="{{ route('dosen.logout') }}" method="POST" class="w-full">
+                <form action="{{ route('logout') }}" method="POST" class="w-full">
                     @csrf
                     <button type="submit" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-gray-700 w-full hover:bg-red-50 transition-all">
                         <i class="fas fa-sign-out-alt w-5 text-red-500"></i>
