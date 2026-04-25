@@ -112,7 +112,8 @@
                         <input type="password" name="current_password" id="current_password"
                                class="input-field w-full px-4 py-3 pr-12 border @error('current_password') border-red-400 @else border-gray-300 @enderror rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition-all"
                                placeholder="Masukkan password saat ini" autocomplete="current-password" required>
-                        <button type="button" onclick="toggleVisibility('current_password', 'icon-current')"
+                        <button type="button"
+                                onclick="toggleVisibility('current_password', 'icon-current')"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                             <i id="icon-current" class="fas fa-eye"></i>
                         </button>
@@ -137,7 +138,8 @@
                                class="input-field w-full px-4 py-3 pr-12 border @error('password') border-red-400 @else border-gray-300 @enderror rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition-all"
                                placeholder="Minimal 8 karakter" autocomplete="new-password"
                                oninput="checkStrength(this.value)" required>
-                        <button type="button" onclick="toggleVisibility('password', 'icon-new')"
+                        <button type="button"
+                                onclick="toggleVisibility('password', 'icon-new')"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                             <i id="icon-new" class="fas fa-eye"></i>
                         </button>
@@ -170,7 +172,8 @@
                                class="input-field w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition-all"
                                placeholder="Ulangi password baru" autocomplete="new-password"
                                oninput="checkMatch()" required>
-                        <button type="button" onclick="toggleVisibility('password_confirmation', 'icon-confirm')"
+                        <button type="button"
+                                onclick="toggleVisibility('password_confirmation', 'icon-confirm')"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                             <i id="icon-confirm" class="fas fa-eye"></i>
                         </button>
@@ -214,67 +217,67 @@
             </button>
         </div>
     </form>
+
+    {{-- ↓ Script di dalam @section('content') agar pasti ter-render --}}
+    <script>
+        function toggleVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon  = document.getElementById(iconId);
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function checkStrength(val) {
+            const bars       = [1, 2, 3, 4].map(i => document.getElementById('bar' + i));
+            const label      = document.getElementById('strength-label');
+            const colors     = { 1: 'bg-red-400', 2: 'bg-orange-400', 3: 'bg-yellow-400', 4: 'bg-green-500' };
+            const labels     = { 1: 'Lemah', 2: 'Cukup', 3: 'Kuat', 4: 'Sangat Kuat' };
+            const textColors = { 1: 'text-red-500', 2: 'text-orange-500', 3: 'text-yellow-600', 4: 'text-green-600' };
+
+            let score = 0;
+            if (val.length >= 8)           score++;
+            if (/[A-Z]/.test(val))         score++;
+            if (/[0-9]/.test(val))         score++;
+            if (/[^A-Za-z0-9]/.test(val))  score++;
+
+            bars.forEach((bar, i) => {
+                bar.className = 'strength-bar flex-1 ' +
+                    (score > 0 && i < score ? colors[score] : 'bg-gray-200');
+            });
+
+            label.className   = 'text-xs mt-0 ' + (score > 0 ? textColors[score] : 'text-gray-400');
+            label.textContent = score > 0
+                ? 'Kekuatan: ' + labels[score]
+                : 'Ketik password untuk melihat kekuatan';
+        }
+
+        function checkMatch() {
+            const pw      = document.getElementById('password').value;
+            const confirm = document.getElementById('password_confirmation').value;
+            const label   = document.getElementById('match-label');
+
+            if (confirm === '') {
+                label.textContent = '';
+                return;
+            }
+
+            if (pw === confirm) {
+                label.className   = 'text-xs mt-1.5 text-green-600';
+                label.textContent = '✓ Password cocok';
+            } else {
+                label.className   = 'text-xs mt-1.5 text-red-500';
+                label.textContent = '✗ Password tidak cocok';
+            }
+        }
+    </script>
+
 </div>
-@endsection
-
-@section('scripts')
-<script>
-    // Toggle show/hide password
-    function toggleVisibility(inputId, iconId) {
-        const input = document.getElementById(inputId);
-        const icon  = document.getElementById(iconId);
-    
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            input.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
-    }
-
-    // Password strength checker
-    function checkStrength(val) {
-        const bars   = [1, 2, 3, 4].map(i => document.getElementById('bar' + i));
-        const label  = document.getElementById('strength-label');
-        const colors = { 1: 'bg-red-400', 2: 'bg-orange-400', 3: 'bg-yellow-400', 4: 'bg-green-500' };
-        const labels = { 1: 'Lemah', 2: 'Cukup', 3: 'Kuat', 4: 'Sangat Kuat' };
-        const textColors = { 1: 'text-red-500', 2: 'text-orange-500', 3: 'text-yellow-600', 4: 'text-green-600' };
-
-        let score = 0;
-        if (val.length >= 8)                    score++;
-        if (/[A-Z]/.test(val))                  score++;
-        if (/[0-9]/.test(val))                  score++;
-        if (/[^A-Za-z0-9]/.test(val))           score++;
-
-        bars.forEach((bar, i) => {
-            bar.className = 'strength-bar flex-1 ' +
-                (score > 0 && i < score ? colors[score] : 'bg-gray-200');
-        });
-
-        label.className = 'text-xs mt-0 ' + (score > 0 ? textColors[score] : 'text-gray-400');
-        label.textContent = score > 0 ? 'Kekuatan: ' + labels[score] : 'Ketik password untuk melihat kekuatan';
-    }
-
-    // Password match checker
-    function checkMatch() {
-        const pw      = document.getElementById('password').value;
-        const confirm = document.getElementById('password_confirmation').value;
-        const label   = document.getElementById('match-label');
-
-        if (confirm === '') {
-            label.textContent = '';
-            return;
-        }
-        if (pw === confirm) {
-            label.className   = 'text-xs mt-1.5 text-green-600';
-            label.textContent = '✓ Password cocok';
-        } else {
-            label.className   = 'text-xs mt-1.5 text-red-500';
-            label.textContent = '✗ Password tidak cocok';
-        }
-    }
-</script>
 @endsection
