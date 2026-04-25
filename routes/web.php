@@ -13,7 +13,7 @@ use App\Http\Controllers\Admin\FileSkripsiController;
 use App\Http\Controllers\Admin\FileSkPembimbingController;
 use App\Http\Controllers\Admin\FileProposalController;
 use App\Http\Controllers\Dosen\DosenSkripsiController;
-use App\Http\Controllers\Dosen\AdminPasswordController;
+use App\Http\Controllers\Admin\AdminPasswordController;
 
 // ── Rute Publik ───────────────────────────────────────────────────────────────
 Route::get('/', [PublicController::class, 'index'])->name('public.index');
