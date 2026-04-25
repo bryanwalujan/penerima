@@ -240,10 +240,7 @@
                         <p class="text-sm text-gray-500 mt-0.5">@yield('header-subtitle', 'Selamat datang di panel dosen')</p>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <div class="relative">
-                            <i class="fas fa-bell text-gray-400 text-xl cursor-pointer hover:text-gray-600 transition"></i>
-                            <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                        </div>
+                        
                         <div class="flex items-center space-x-2">
                             @if($authDosen && $authDosen->foto)
                                 <img src="{{ Storage::url($authDosen->foto) }}" alt="{{ $authDosen->nama }}" 
