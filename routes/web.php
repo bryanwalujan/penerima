@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\FileSkPembimbingController;
 use App\Http\Controllers\Admin\FileProposalController;
 use App\Http\Controllers\Dosen\DosenSkripsiController;
 use App\Http\Controllers\Admin\AdminPasswordController;
+use App\Http\Controllers\Admin\AdminAkunController;
 
 // ── Rute Publik ───────────────────────────────────────────────────────────────
 Route::get('/', [PublicController::class, 'index'])->name('public.index');
@@ -99,6 +100,10 @@ Route::prefix('admin')->group(function () {
 
     Route::get('/password/edit',   [AdminPasswordController::class, 'edit'])  ->name('admin.password.edit');
     Route::put('/password/update', [AdminPasswordController::class, 'update'])->name('admin.password.update');
+
+    Route::get('/akun', [AdminAkunController::class, 'index'])->name('admin.akun.index');
+    Route::get('/akun/{id}/reset-password', [AdminAkunController::class, 'editResetPassword'])->name('admin.akun.reset-password.edit');
+    Route::put('/akun/{id}/reset-password', [AdminAkunController::class, 'resetPassword'])->name('admin.akun.reset-password.update');
 });
 
 Route::middleware(['auth'])->group(function () {
