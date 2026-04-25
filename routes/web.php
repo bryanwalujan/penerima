@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\FileSkripsiController;
 use App\Http\Controllers\Admin\FileSkPembimbingController;
 use App\Http\Controllers\Admin\FileProposalController;
 use App\Http\Controllers\Dosen\DosenSkripsiController;
+use App\Http\Controllers\Dosen\AdminPasswordController;
 
 // ── Rute Publik ───────────────────────────────────────────────────────────────
 Route::get('/', [PublicController::class, 'index'])->name('public.index');
@@ -95,6 +96,9 @@ Route::prefix('admin')->group(function () {
         Route::get('/preview/{skripsi}', [FileProposalController::class, 'preview'])->name('preview');
         Route::get('/download/{skripsi}', [FileProposalController::class, 'download'])->name('download');
     });
+
+    Route::get('/password/edit',   [AdminPasswordController::class, 'edit'])  ->name('admin.password.edit');
+    Route::put('/password/update', [AdminPasswordController::class, 'update'])->name('admin.password.update');
 });
 
 Route::middleware(['auth'])->group(function () {

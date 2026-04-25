@@ -1,4 +1,4 @@
-{{-- resources/views/components/sidebar.blade.php --}}
+{{-- resources/views/layouts/admin/partials/sidebar.blade.php --}}
 <div class="sidebar fixed h-full">
     <div class="p-5 flex items-center border-b border-blue-700">
         <div class="bg-white p-3 rounded-lg mr-3">
@@ -80,6 +80,17 @@
             @if($fileProposalCount > 0)
                 <span class="ml-auto bg-yellow-600 text-xs px-2 py-0.5 rounded-full">{{ $fileProposalCount }}</span>
             @endif
+        </a>
+
+        {{-- Separator Akun --}}
+        <div class="px-6 mt-4 mb-2">
+            <span class="text-xs text-blue-300 uppercase tracking-wider">Akun</span>
+        </div>
+
+        {{-- Ganti Password --}}
+        <a href="{{ route('admin.password.edit') }}" class="nav-link flex items-center py-3 px-6 transition-all duration-300 {{ request()->routeIs('admin.password.*') ? 'active' : '' }}">
+            <i class="fas fa-lock text-blue-300 mr-3 w-5"></i>
+            <span>Ganti Password</span>
         </a>
     </div>
 
