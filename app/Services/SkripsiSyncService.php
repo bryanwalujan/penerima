@@ -22,7 +22,9 @@ class SkripsiSyncService
         $filesBase64 = $payload['files']          ?? [];
         $source      = $payload['source']         ?? 'presma';
         $pendaftaranId = (string) ($payload['pendaftaran_id'] ?? '');
-        $folderNameFromPayload = $payload['folder_name'] ?? null; // Ambil folder_name jika dikirim
+        $folderNameFromPayload = $payload['folder_name'] ?? null;
+        $type = $payload['type'] ?? 'skripsi'; // tambahan: tipe data (skripsi, seminar_proposal, sk_proposal)
+        $nomorSkProposal = $payload['nomor_sk_proposal'] ?? null; // tambahan: nomor SK Proposal
 
         // --- 1. Resolve dosen ---
         $resolved = $this->resolveDosenList($dosenList);
@@ -58,22 +60,44 @@ class SkripsiSyncService
         }
 
         // --- 3. Simpan file ke folder terpisah ---
-        $savedFiles = $this->saveFilesToSeparateFolders($skripsi, $filesBase64);
+        $savedFiles = $this->saveFilesToSeparateFolders($skripsi, $filesBase64, $type);
 
-        // Update path file ke DB
-        $skripsi->update(array_filter([
-            'file_skripsi'       => $savedFiles['skripsi']       ?? null,
-            'file_sk_pembimbing' => $savedFiles['sk_pembimbing'] ?? null,
-            'file_proposal'      => $savedFiles['proposal']      ?? null,
-        ]));
+        // Update path file ke DB berdasarkan tipe
+        $updateData = [];
+        
+        if ($type === 'sk_proposal') {
+            // Untuk SK Proposal, simpan ke field file_proposal (override)
+            // Atau bisa juga buat field baru di migration jika perlu
+            $updateData['file_proposal'] = $savedFiles['sk_proposal'] ?? null;
+            
+            // Simpan juga nomor SK Proposal ke field raw_nama_pembimbing1 atau buat field baru
+            // Untuk sementara simpan di raw_nama_pembimbing1 sebagai metadata
+            if ($nomorSkProposal) {
+                $skripsi->raw_nama_pembimbing1 = $nomorSkProposal . ' | ' . ($skripsi->raw_nama_pembimbing1 ?? '');
+                $skripsi->save();
+            }
+        } else {
+            // Untuk tipe skripsi biasa
+            $updateData = array_filter([
+                'file_skripsi'       => $savedFiles['skripsi']       ?? null,
+                'file_sk_pembimbing' => $savedFiles['sk_pembimbing'] ?? null,
+                'file_proposal'      => $savedFiles['proposal']      ?? null,
+            ]);
+        }
+        
+        if (!empty($updateData)) {
+            $skripsi->update($updateData);
+        }
 
         Log::info('[SkripsiSync] Record skripsi disimpan', [
             'skripsi_id'    => $skripsi->id,
             'pendaftaran_id'=> $pendaftaranId,
+            'type'          => $type,
             'folder_name'   => $skripsi->folder_name,
             'match_pb1'     => $resolved['pembimbing_1']['status'],
             'match_pb2'     => $resolved['pembimbing_2']['status'],
             'files_saved'   => array_keys(array_filter($savedFiles)),
+            'nomor_sk_proposal' => $nomorSkProposal,
         ]);
 
         return [
@@ -89,7 +113,7 @@ class SkripsiSyncService
     }
 
     /**
-     * Simpan file ke folder yang terpisah: skripsi/, sk_pembimbing/, proposal/
+     * Simpan file ke folder yang terpisah
      * 
      * Mendukung 2 format payload:
      * 1. Format lama: files['skripsi'] = "base64string..."
@@ -99,88 +123,104 @@ class SkripsiSyncService
      *      'filename' => 'Skripsi.pdf'
      *    ]
      */
-    private function saveFilesToSeparateFolders(Skripsi $skripsi, array $filesBase64): array
-{
-    $saved = [];
-    $slug = Str::slug($skripsi->folder_name);
-    
-    $map = [
-        'skripsi' => [
-            'folder' => 'skripsi',
-            'filename' => 'Skripsi.pdf',
-            'label' => 'Skripsi',
-            'db_field' => 'file_skripsi'
-        ],
-        'sk_pembimbing' => [
-            'folder' => 'sk_pembimbing',
-            'filename' => 'SK_Pembimbing.pdf',
-            'label' => 'SK_Pembimbing',
-            'db_field' => 'file_sk_pembimbing'
-        ],
-        'proposal' => [
-            'folder' => 'proposal',  // ✅ Folder terpisah untuk proposal
-            'filename' => 'Proposal.pdf',
-            'label' => 'Proposal',
-            'db_field' => 'file_proposal'
-        ],
-    ];
-
-    foreach ($map as $fileKey => $config) {
-        $fileData = $filesBase64[$fileKey] ?? null;
+    private function saveFilesToSeparateFolders(Skripsi $skripsi, array $filesBase64, string $type = 'skripsi'): array
+    {
+        $saved = [];
+        $slug = Str::slug($skripsi->folder_name);
         
-        if (!$fileData) {
-            Log::info("[SkripsiSync] File {$fileKey} tidak ada dalam payload");
-            continue;
-        }
-
-        // Handle multiple formats
-        $base64 = null;
+        // Mapping file berdasarkan tipe
+        $map = [];
         
-        if (is_string($fileData)) {
-            $base64 = $fileData;
-            Log::info("[SkripsiSync] Format string untuk {$fileKey}");
-        } elseif (is_array($fileData) && isset($fileData['content'])) {
-            $base64 = $fileData['content'];
-            Log::info("[SkripsiSync] Format array untuk {$fileKey}", [
-                'folder' => $fileData['folder'] ?? $config['folder'],
-                'filename' => $fileData['filename'] ?? $config['filename']
-            ]);
+        if ($type === 'sk_proposal') {
+            // Mapping untuk SK Proposal - simpan ke folder proposal
+            $map = [
+                'sk_proposal' => [
+                    'folder' => 'proposal',  // simpan di folder proposal
+                    'filename' => 'SK_Proposal.pdf',
+                    'label' => 'SK Proposal',
+                    'db_field' => 'file_proposal'
+                ],
+            ];
         } else {
-            Log::warning("[SkripsiSync] Format tidak dikenal untuk {$fileKey}");
-            continue;
+            // Mapping untuk skripsi biasa
+            $map = [
+                'skripsi' => [
+                    'folder' => 'skripsi',
+                    'filename' => 'Skripsi.pdf',
+                    'label' => 'Skripsi',
+                    'db_field' => 'file_skripsi'
+                ],
+                'sk_pembimbing' => [
+                    'folder' => 'sk_pembimbing',
+                    'filename' => 'SK_Pembimbing.pdf',
+                    'label' => 'SK_Pembimbing',
+                    'db_field' => 'file_sk_pembimbing'
+                ],
+                'proposal' => [
+                    'folder' => 'proposal',
+                    'filename' => 'Proposal.pdf',
+                    'label' => 'Proposal',
+                    'db_field' => 'file_proposal'
+                ],
+            ];
         }
 
-        if (!$base64) {
-            Log::warning("[SkripsiSync] Base64 kosong untuk {$fileKey}");
-            continue;
-        }
-
-        try {
-            $decoded = base64_decode($base64, strict: true);
-            if ($decoded === false) {
-                Log::warning("[SkripsiSync] Base64 decode gagal untuk {$fileKey}");
+        foreach ($map as $fileKey => $config) {
+            $fileData = $filesBase64[$fileKey] ?? null;
+            
+            if (!$fileData) {
+                Log::info("[SkripsiSync] File {$fileKey} tidak ada dalam payload");
                 continue;
             }
 
-            // Buat direktori jika belum ada
-            $fullFolderPath = storage_path("app/private/{$config['folder']}/{$slug}");
-            if (!file_exists($fullFolderPath)) {
-                mkdir($fullFolderPath, 0755, true);
+            // Handle multiple formats
+            $base64 = null;
+            
+            if (is_string($fileData)) {
+                $base64 = $fileData;
+                Log::info("[SkripsiSync] Format string untuk {$fileKey}");
+            } elseif (is_array($fileData) && isset($fileData['content'])) {
+                $base64 = $fileData['content'];
+                Log::info("[SkripsiSync] Format array untuk {$fileKey}", [
+                    'folder' => $fileData['folder'] ?? $config['folder'],
+                    'filename' => $fileData['filename'] ?? $config['filename']
+                ]);
+            } else {
+                Log::warning("[SkripsiSync] Format tidak dikenal untuk {$fileKey}");
+                continue;
             }
 
-            $path = "{$config['folder']}/{$slug}/{$config['filename']}";
-            Storage::disk('local')->put($path, $decoded);
-            $saved[$fileKey] = $path;
+            if (!$base64) {
+                Log::warning("[SkripsiSync] Base64 kosong untuk {$fileKey}");
+                continue;
+            }
 
-            Log::info("[SkripsiSync] File tersimpan: {$path} (Size: " . strlen($decoded) . " bytes)");
+            try {
+                $decoded = base64_decode($base64, strict: true);
+                if ($decoded === false) {
+                    Log::warning("[SkripsiSync] Base64 decode gagal untuk {$fileKey}");
+                    continue;
+                }
 
-        } catch (\Exception $e) {
-            Log::error("[SkripsiSync] Gagal simpan file {$fileKey}: " . $e->getMessage());
+                // Buat direktori jika belum ada
+                $fullFolderPath = storage_path("app/private/{$config['folder']}/{$slug}");
+                if (!file_exists($fullFolderPath)) {
+                    mkdir($fullFolderPath, 0755, true);
+                }
+
+                $path = "{$config['folder']}/{$slug}/{$config['filename']}";
+                Storage::disk('local')->put($path, $decoded);
+                $saved[$fileKey] = $path;
+
+                Log::info("[SkripsiSync] File tersimpan: {$path} (Size: " . strlen($decoded) . " bytes)");
+
+            } catch (\Exception $e) {
+                Log::error("[SkripsiSync] Gagal simpan file {$fileKey}: " . $e->getMessage());
+            }
         }
-    }
 
-    return $saved;
-}
+        return $saved;
+    }
 
     /**
      * Resolve dosen dari dosen_list berdasarkan role.
