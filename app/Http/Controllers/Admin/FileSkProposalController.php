@@ -8,40 +8,34 @@ use App\Models\Dosen;
 use App\Models\Skripsi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class FileSkProposalController extends Controller
 {
     public function index(Request $request)
     {
-        // Ambil dosen yang memiliki SK Proposal (file_proposal terisi dan memiliki metadata sk_proposal)
+        // Ambil dosen yang memiliki SK Proposal (file_proposal terisi)
         $dosens = Dosen::whereHas('skripsiSebagaiPembimbing1', function($q) {
-                $q->whereNotNull('file_proposal')
-                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                $q->whereNotNull('file_proposal');
             })
             ->orWhereHas('skripsiSebagaiPembimbing2', function($q) {
-                $q->whereNotNull('file_proposal')
-                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                $q->whereNotNull('file_proposal');
             })
             ->with([
                 'skripsiSebagaiPembimbing1' => function($q) {
-                    $q->whereNotNull('file_proposal')
-                      ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                    $q->whereNotNull('file_proposal');
                 },
                 'skripsiSebagaiPembimbing2' => function($q) {
-                    $q->whereNotNull('file_proposal')
-                      ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                    $q->whereNotNull('file_proposal');
                 }
             ])
             ->get();
 
         $stats = [
             'total_dosen' => $dosens->count(),
-            'total_sk_proposal' => Skripsi::whereNotNull('file_proposal')
-                ->where('raw_nama_pembimbing1', 'like', 'SK_%')
-                ->count(),
+            'total_sk_proposal' => Skripsi::whereNotNull('file_proposal')->count(),
             'from_presma' => Skripsi::whereNotNull('file_proposal')
                 ->where('source', 'presma')
-                ->where('raw_nama_pembimbing1', 'like', 'SK_%')
                 ->count(),
         ];
 
@@ -52,12 +46,10 @@ class FileSkProposalController extends Controller
     {
         $dosen->load([
             'skripsiSebagaiPembimbing1' => function($q) {
-                $q->whereNotNull('file_proposal')
-                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                $q->whereNotNull('file_proposal');
             },
             'skripsiSebagaiPembimbing2' => function($q) {
-                $q->whereNotNull('file_proposal')
-                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                $q->whereNotNull('file_proposal');
             }
         ]);
 
@@ -66,46 +58,148 @@ class FileSkProposalController extends Controller
         return view('admin.file.sk-proposal.show', compact('dosen', 'skripsiList'));
     }
 
+    /**
+     * Preview SK Proposal - Perbaikan untuk membaca file dari folder proposal
+     */
     public function preview(Skripsi $skripsi)
     {
         if (!$skripsi->file_proposal) {
             abort(404, 'File SK Proposal tidak ditemukan');
         }
 
-        if (Storage::disk('local')->exists($skripsi->file_proposal)) {
-            $file = Storage::disk('local')->get($skripsi->file_proposal);
-            $mimeType = Storage::disk('local')->mimeType($skripsi->file_proposal);
-        } elseif (Storage::disk('public')->exists($skripsi->file_proposal)) {
-            $file = Storage::disk('public')->get($skripsi->file_proposal);
-            $mimeType = Storage::disk('public')->mimeType($skripsi->file_proposal);
-        } else {
-            abort(404, 'File tidak ditemukan di storage');
+        $filePath = $skripsi->file_proposal;
+        
+        // Log untuk debugging
+        Log::info('Mencoba preview SK Proposal', [
+            'skripsi_id' => $skripsi->id,
+            'file_path' => $filePath,
+            'mahasiswa' => $skripsi->nama_mahasiswa
+        ]);
+
+        // Cek di disk local (storage/app/private/)
+        if (Storage::disk('local')->exists($filePath)) {
+            $file = Storage::disk('local')->get($filePath);
+            $mimeType = Storage::disk('local')->mimeType($filePath);
+            
+            Log::info('File ditemukan di disk local', [
+                'path' => $filePath,
+                'size' => strlen($file)
+            ]);
+            
+            return response($file, 200)
+                ->header('Content-Type', $mimeType)
+                ->header('Content-Disposition', 'inline; filename="SK_Proposal_' . $skripsi->nama_mahasiswa . '.pdf"');
         }
         
-        return response($file, 200)
-            ->header('Content-Type', $mimeType)
-            ->header('Content-Disposition', 'inline');
+        // Cek di disk public sebagai fallback
+        if (Storage::disk('public')->exists($filePath)) {
+            $file = Storage::disk('public')->get($filePath);
+            $mimeType = Storage::disk('public')->mimeType($filePath);
+            
+            Log::info('File ditemukan di disk public', [
+                'path' => $filePath,
+                'size' => strlen($file)
+            ]);
+            
+            return response($file, 200)
+                ->header('Content-Type', $mimeType)
+                ->header('Content-Disposition', 'inline; filename="SK_Proposal_' . $skripsi->nama_mahasiswa . '.pdf"');
+        }
+        
+        // Cek langsung dengan file system (absolute path)
+        $fullPath = storage_path('app/private/' . $filePath);
+        if (file_exists($fullPath)) {
+            $file = file_get_contents($fullPath);
+            $mimeType = mime_content_type($fullPath);
+            
+            Log::info('File ditemukan via absolute path', [
+                'path' => $fullPath,
+                'size' => strlen($file)
+            ]);
+            
+            return response($file, 200)
+                ->header('Content-Type', $mimeType)
+                ->header('Content-Disposition', 'inline; filename="SK_Proposal_' . $skripsi->nama_mahasiswa . '.pdf"');
+        }
+        
+        // Coba cek di folder proposal dengan path yang berbeda
+        $alternativePaths = [
+            'proposal/' . basename($filePath),
+            'proposal/' . $skripsi->folder_name . '/SK_Proposal.pdf',
+            'sk_proposal/' . $skripsi->folder_name . '/SK_Proposal.pdf',
+        ];
+        
+        foreach ($alternativePaths as $altPath) {
+            if (Storage::disk('local')->exists($altPath)) {
+                $file = Storage::disk('local')->get($altPath);
+                $mimeType = Storage::disk('local')->mimeType($altPath);
+                
+                Log::info('File ditemukan di alternative path', [
+                    'path' => $altPath
+                ]);
+                
+                return response($file, 200)
+                    ->header('Content-Type', $mimeType)
+                    ->header('Content-Disposition', 'inline; filename="SK_Proposal_' . $skripsi->nama_mahasiswa . '.pdf"');
+            }
+        }
+        
+        Log::error('File SK Proposal tidak ditemukan', [
+            'skripsi_id' => $skripsi->id,
+            'file_path' => $filePath,
+            'checked_paths' => [
+                'local_exists' => Storage::disk('local')->exists($filePath),
+                'public_exists' => Storage::disk('public')->exists($filePath),
+                'absolute_path' => $fullPath,
+                'absolute_exists' => file_exists($fullPath)
+            ]
+        ]);
+        
+        abort(404, 'File SK Proposal tidak ditemukan di storage: ' . $filePath);
     }
 
+    /**
+     * Download SK Proposal
+     */
     public function download(Skripsi $skripsi)
     {
         if (!$skripsi->file_proposal) {
             abort(404, 'File SK Proposal tidak ditemukan');
         }
 
-        if (Storage::disk('local')->exists($skripsi->file_proposal)) {
+        $filePath = $skripsi->file_proposal;
+        
+        // Cari file di berbagai lokasi
+        if (Storage::disk('local')->exists($filePath)) {
             $disk = 'local';
-        } elseif (Storage::disk('public')->exists($skripsi->file_proposal)) {
+        } elseif (Storage::disk('public')->exists($filePath)) {
             $disk = 'public';
         } else {
-            abort(404, 'File tidak ditemukan di storage');
+            // Cek absolute path
+            $fullPath = storage_path('app/private/' . $filePath);
+            if (file_exists($fullPath)) {
+                $fileName = "SK_Proposal_{$skripsi->nama_mahasiswa}_{$skripsi->nim}.pdf";
+                return response()->download($fullPath, $fileName);
+            }
+            
+            // Cek alternative paths
+            $alternativePaths = [
+                'proposal/' . basename($filePath),
+                'proposal/' . $skripsi->folder_name . '/SK_Proposal.pdf',
+            ];
+            
+            foreach ($alternativePaths as $altPath) {
+                if (Storage::disk('local')->exists($altPath)) {
+                    $fileName = "SK_Proposal_{$skripsi->nama_mahasiswa}_{$skripsi->nim}.pdf";
+                    return Storage::disk('local')->download($altPath, $fileName);
+                }
+            }
+            
+            abort(404, 'File SK Proposal tidak ditemukan di storage');
         }
 
-        // Ambil nomor SK dari raw_nama_pembimbing1
-        $nomorSk = explode(' | ', $skripsi->raw_nama_pembimbing1 ?? '')[0];
         $fileName = "SK_Proposal_{$skripsi->nama_mahasiswa}_{$skripsi->nim}.pdf";
-        
-        return Storage::disk($disk)->download($skripsi->file_proposal, $fileName);
+        return Storage::disk($disk)->download($filePath, $fileName);
     }
 
     /**
