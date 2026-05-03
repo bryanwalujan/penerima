@@ -70,15 +70,17 @@
             @endif
         </a>
 
-        {{-- File Proposal --}}
-        <a href="{{ route('admin.file.sk-proposal.index') }}" class="nav-link flex items-center py-3 pl-12 pr-6 transition-all duration-300 {{ request()->routeIs('admin.file.proposal.*') ? 'active' : '' }}">
-            <i class="fas fa-file-word text-yellow-400 mr-3 w-5"></i>
-            <span>Proposal</span>
+        {{-- File Sk Proposal --}}
+        <a href="{{ route('admin.file.sk-proposal.index') }}" class="nav-link flex items-center py-3 pl-12 pr-6 transition-all duration-300 {{ request()->routeIs('admin.file.sk-proposal.*') ? 'active' : '' }}">
+            <i class="fas fa-file-alt text-blue-400 mr-3 w-5"></i>
+            <span>SK Proposal</span>
             @php
-                $fileProposalCount = \App\Models\Skripsi::whereNotNull('file_proposal')->count();
+                $fileSkProposalCount = \App\Models\Skripsi::whereNotNull('file_proposal')
+                    ->where('raw_nama_pembimbing1', 'like', 'SK_%')
+                    ->count();
             @endphp
-            @if($fileProposalCount > 0)
-                <span class="ml-auto bg-yellow-600 text-xs px-2 py-0.5 rounded-full">{{ $fileProposalCount }}</span>
+            @if($fileSkProposalCount > 0)
+                <span class="ml-auto bg-blue-600 text-xs px-2 py-0.5 rounded-full">{{ $fileSkProposalCount }}</span>
             @endif
         </a>
 
