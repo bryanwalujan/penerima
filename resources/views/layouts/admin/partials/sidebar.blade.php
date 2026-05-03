@@ -71,7 +71,7 @@
         </a>
 
         {{-- File Proposal --}}
-        <a href="{{ route('admin.file.proposal.index') }}" class="nav-link flex items-center py-3 pl-12 pr-6 transition-all duration-300 {{ request()->routeIs('admin.file.proposal.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.file.sk-proposal.index') }}" class="nav-link flex items-center py-3 pl-12 pr-6 transition-all duration-300 {{ request()->routeIs('admin.file.proposal.*') ? 'active' : '' }}">
             <i class="fas fa-file-word text-yellow-400 mr-3 w-5"></i>
             <span>Proposal</span>
             @php

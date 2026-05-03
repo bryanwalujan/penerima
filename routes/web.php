@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\SkripsiController;
 use App\Http\Controllers\Admin\FileSkripsiController;
 use App\Http\Controllers\Admin\FileSkPembimbingController;
-use App\Http\Controllers\Admin\FileProposalController;
+use App\Http\Controllers\Admin\FileSkProposalController;
 use App\Http\Controllers\Dosen\DosenSkripsiController;
 use App\Http\Controllers\Admin\AdminPasswordController;
 use App\Http\Controllers\Admin\AdminAkunController;
@@ -90,12 +90,12 @@ Route::prefix('admin')->group(function () {
         Route::get('/download/{skripsi}', [FileSkPembimbingController::class, 'download'])->name('download');
     });
     
-    // File Proposal Routes
-    Route::prefix('file/proposal')->name('admin.file.proposal.')->group(function () {
-        Route::get('/', [FileProposalController::class, 'index'])->name('index');
-        Route::get('/dosen/{dosen}', [FileProposalController::class, 'show'])->name('dosen');
-        Route::get('/preview/{skripsi}', [FileProposalController::class, 'preview'])->name('preview');
-        Route::get('/download/{skripsi}', [FileProposalController::class, 'download'])->name('download');
+    // SK Proposal Routes (file sk_proposal)
+    Route::prefix('file/sk-proposal')->name('admin.file.sk-proposal.')->group(function () {
+        Route::get('/', [FileSkProposalController::class, 'index'])->name('index');
+        Route::get('/dosen/{dosen}', [FileSkProposalController::class, 'show'])->name('dosen');
+        Route::get('/preview/{skripsi}', [FileSkProposalController::class, 'preview'])->name('preview');
+        Route::get('/download/{skripsi}', [FileSkProposalController::class, 'download'])->name('download');
     });
 
     Route::get('/password/edit',   [AdminPasswordController::class, 'edit'])  ->name('admin.password.edit');

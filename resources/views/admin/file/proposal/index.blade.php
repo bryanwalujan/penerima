@@ -190,7 +190,7 @@
     }
     
     // Search functionality
-    document.getElementById('searchInput').addEventListener('keyup', function() {
+    document.getElementById('searchInput').addEventListener('keyup', funaction() {
         let searchText = this.value.toLowerCase();
         let rows = document.querySelectorAll('#proposalTableBody tr');
         
