@@ -177,11 +177,38 @@
 </div>
 
 <script>
-    function previewFile(previewUrl, namaMahasiswa) {
-        document.getElementById('pdfIframe').src = previewUrl;
-        document.getElementById('downloadLink').href = previewUrl.replace('/preview/', '/download/');
-        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-file-alt text-blue-600 mr-2"></i>Preview SK Pembimbing - ' + namaMahasiswa;
-        document.getElementById('pdfModal').classList.remove('hidden');
+     function previewFile(previewUrl, namaMahasiswa) {
+        console.log('Preview URL:', previewUrl);
+        console.log('Nama Mahasiswa:', namaMahasiswa);
+        
+        // Test apakah URL bisa diakses
+        fetch(previewUrl, { method: 'HEAD' })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (response.ok) {
+                    // Set iframe source
+                    document.getElementById('pdfIframe').src = previewUrl;
+                    document.getElementById('downloadLink').href = previewUrl.replace('/preview/', '/download/');
+                    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-file-alt text-blue-600 mr-2"></i>Preview SK Proposal - ' + namaMahasiswa;
+                    document.getElementById('pdfModal').classList.remove('hidden');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Memuat File',
+                        text: 'File tidak dapat diakses. Status: ' + response.status,
+                        confirmButtonColor: '#3085d6'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan saat mengakses file: ' + error.message,
+                    confirmButtonColor: '#3085d6'
+                });
+            });
     }
     
     function closeModal() {
