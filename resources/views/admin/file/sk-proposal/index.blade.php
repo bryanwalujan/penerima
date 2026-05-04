@@ -127,10 +127,6 @@
                             </td>
                             <td class="py-3 px-4 text-center">
                                 <div class="flex justify-center space-x-3">
-                                    <button onclick="previewFile('{{ route('admin.file.sk-proposal.preview', $skripsi) }}', '{{ $skripsi->nama_mahasiswa }}')" 
-                                            class="text-blue-600 hover:text-blue-800" title="Preview SK">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
                                     <a href="{{ route('admin.file.sk-proposal.download', $skripsi) }}" 
                                        class="text-green-600 hover:text-green-800" title="Download SK">
                                         <i class="fas fa-download"></i>
