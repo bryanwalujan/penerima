@@ -71,7 +71,6 @@
                     <th class="py-3 px-4 text-left">Dosen Pembimbing</th>
                     <th class="py-3 px-4 text-left">Mahasiswa</th>
                     <th class="py-3 px-4 text-left">NIM</th>
-                    <th class="py-3 px-4 text-left">Nomor SK</th>
                     <th class="py-3 px-4 text-left">Peran</th>
                     <th class="py-3 px-4 text-center rounded-tr-lg">Aksi</th>
                 </tr>
@@ -90,12 +89,6 @@
                             </td>
                             <td class="py-3 px-4 font-medium">{{ $skripsi->nama_mahasiswa }}</td>
                             <td class="py-3 px-4"><code>{{ $skripsi->nim ?: '-' }}</code></td>
-                            <td class="py-3 px-4">
-                                @php
-                                    $nomorSk = explode(' | ', $skripsi->raw_nama_pembimbing1 ?? '')[0];
-                                @endphp
-                                <span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{{ $nomorSk ?: '-' }}</span>
-                            </td>
                             <td class="py-3 px-4">
                                 <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     <i class="fas fa-chalkboard-user mr-1"></i> Pembimbing 1
@@ -127,12 +120,6 @@
                             </td>
                             <td class="py-3 px-4 font-medium">{{ $skripsi->nama_mahasiswa }}</td>
                             <td class="py-3 px-4"><code>{{ $skripsi->nim ?: '-' }}</code></td>
-                            <td class="py-3 px-4">
-                                @php
-                                    $nomorSk = explode(' | ', $skripsi->raw_nama_pembimbing1 ?? '')[0];
-                                @endphp
-                                <span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{{ $nomorSk ?: '-' }}</span>
-                            </td>
                             <td class="py-3 px-4">
                                 <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     <i class="fas fa-chalkboard-user mr-1"></i> Pembimbing 2
