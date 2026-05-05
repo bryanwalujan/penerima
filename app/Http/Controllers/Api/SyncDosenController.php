@@ -11,28 +11,6 @@ use Illuminate\Support\Facades\Log;
 
 class SyncDosenController extends Controller
 {
-    /**
-     * Terima dan sync data dosen pembimbing dari presma.
-     *
-     * POST /api/sync/dosen-pembimbing
-     *
-     * Header yang wajib:
-     *   X-Sync-Token: <nilai dari PRESMA_SYNC_TOKEN di .env>
-     *
-     * Body JSON:
-     * {
-     *   "source": "presma",
-     *   "dosen_list": [
-     *     {
-     *       "nip":  "198501012010122001",
-     *       "nidn": "0001018501",
-     *       "nama": "Dr. Irene Realyta ...",
-     *       "role": "pembimbing_1"   // opsional, untuk keperluan log
-     *     },
-     *     { ... }
-     *   ]
-     * }
-     */
     public function syncDosenPembimbing(Request $request): JsonResponse
     {
         // ── 1. Autentikasi ─────────────────────────────────────────────────
@@ -109,15 +87,6 @@ class SyncDosenController extends Controller
         ], $hasError ? 207 : 200);
     }
 
-    /**
-     * Upsert satu data dosen.
-     *
-     * Logika:
-     * - Jika ada NIP → cari by NIP
-     * - Jika tidak ada NIP → cari by nama
-     * - Tidak ditemukan → buat baru
-     * - Ditemukan → update nama & NIP (data lain tidak ditimpa)
-     */
     private function syncDosen(array $dosenData): Dosen
     {
         $query = Dosen::query();

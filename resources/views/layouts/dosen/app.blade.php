@@ -201,20 +201,44 @@
                 <div class="pt-4 mt-4 border-t border-gray-100">
                     <p class="text-xs text-gray-400 px-4 mb-2 uppercase font-semibold">Bimbingan Mahasiswa</p>
                 </div>
+
+                <a href="{{ route('dosen.sk-proposal.index') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-gray-700 {{ request()->routeIs('dosen.sk-proposal.*') ? 'active' : '' }}">
+                    <i class="fas fa-file-alt w-5 text-yellow-500"></i>
+                    <span class="font-medium">SK Proposal</span>
+                    @php
+                        $skProposalCount = 0;
+                        if ($authDosen) {
+                            $skProposalCount = \App\Models\Skripsi::whereNotNull('file_proposal')
+                                ->where('raw_nama_pembimbing1', 'like', 'SK_%')
+                                ->where(function($q) use ($authDosen) {
+                                    $q->where('dosen_pembimbing1_id', $authDosen->id)
+                                      ->orWhere('dosen_pembimbing2_id', $authDosen->id);
+                                })
+                                ->count();
+                        }
+                    @endphp
+                    @if($skProposalCount > 0)
+                        <span class="ml-auto text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">{{ $skProposalCount }}</span>
+                    @endif
+                </a>
                 
-                <a href="{{ route('dosen.skripsi.index') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-gray-700 {{ request()->routeIs('dosen.skripsi.*') ? 'active' : '' }}">
+                <a href="{{ route('dosen.sk-ujian-hasil.index') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-gray-700 {{ request()->routeIs('dosen.sk-ujian-hasil.*') ? 'active' : '' }}">
                     <i class="fas fa-file-pdf w-5 text-red-500"></i>
-                    <span class="font-medium">File Skripsi</span>
-                </a>
-                
-                <a href="{{ route('dosen.sk-pembimbing.index') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-gray-700 {{ request()->routeIs('dosen.sk-pembimbing.*') ? 'active' : '' }}">
-                    <i class="fas fa-file-alt w-5 text-blue-500"></i>
-                    <span class="font-medium">SK Pembimbing</span>
-                </a>
-                
-                <a href="{{ route('dosen.proposal.index') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-gray-700 {{ request()->routeIs('dosen.proposal.*') ? 'active' : '' }}">
-                    <i class="fas fa-file-word w-5 text-yellow-500"></i>
-                    <span class="font-medium">Proposal</span>
+                    <span class="font-medium">SK Ujian Hasil</span>
+                    @php
+                        $skUjianHasilCount = 0;
+                        if ($authDosen) {
+                            $skUjianHasilCount = \App\Models\Skripsi::whereNotNull('file_skripsi')
+                                ->where(function($q) use ($authDosen) {
+                                    $q->where('dosen_pembimbing1_id', $authDosen->id)
+                                      ->orWhere('dosen_pembimbing2_id', $authDosen->id);
+                                })
+                                ->count();
+                        }
+                    @endphp
+                    @if($skUjianHasilCount > 0)
+                        <span class="ml-auto text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">{{ $skUjianHasilCount }}</span>
+                    @endif
                 </a>
             </nav>
             

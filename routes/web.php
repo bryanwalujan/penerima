@@ -9,7 +9,6 @@ use App\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\SkripsiController;
-use App\Http\Controllers\Admin\FileSkripsiController;
 use App\Http\Controllers\Admin\FileSkPembimbingController;
 use App\Http\Controllers\Admin\FileSkUjianHasilController;
 use App\Http\Controllers\Admin\FileSkProposalController;
@@ -74,14 +73,6 @@ Route::prefix('admin')->group(function () {
     Route::get('/storage/skripsi/{filename}', [SkripsiController::class, 'serveFile'])
         ->name('admin.skripsi.serve')
         ->where('filename', '.*');
-
-    // File Skripsi Routes
-    Route::prefix('file/skripsi')->name('admin.file.skripsi.')->group(function () {
-        Route::get('/', [FileSkripsiController::class, 'index'])->name('index');
-        Route::get('/dosen/{dosen}', [FileSkripsiController::class, 'show'])->name('dosen');
-        Route::get('/preview/{skripsi}', [FileSkripsiController::class, 'preview'])->name('preview');
-        Route::get('/download/{skripsi}', [FileSkripsiController::class, 'download'])->name('download');
-    });
     
     // SK Pembimbing
     Route::prefix('file/sk-pembimbing')->name('admin.file.sk-pembimbing.')->group(function () {
@@ -154,24 +145,31 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/dosen/paten/update/{id}', [DosenProfileController::class, 'updatePaten'])->name('dosen.paten.update');
     Route::delete('/dosen/paten/destroy/{id}', [DosenProfileController::class, 'destroyPaten'])->name('dosen.paten.destroy');
 
-    // Routes untuk file skripsi bimbingan
-    Route::prefix('dosen/skripsi')->name('dosen.skripsi.')->group(function () {
-        Route::get('/', [DosenSkripsiController::class, 'skripsiIndex'])->name('index');
-        Route::get('/preview/{skripsi}', [DosenSkripsiController::class, 'previewSkripsi'])->name('preview');
-        Route::get('/download/{skripsi}', [DosenSkripsiController::class, 'downloadSkripsi'])->name('download');
-    });
-    
-    // Routes untuk file SK pembimbing
-    Route::prefix('dosen/sk-pembimbing')->name('dosen.sk-pembimbing.')->group(function () {
+    // SK Pembimbing
+    Route::prefix('sk-pembimbing')->name('sk-pembimbing.')->group(function () {
         Route::get('/', [DosenSkripsiController::class, 'skPembimbingIndex'])->name('index');
         Route::get('/preview/{skripsi}', [DosenSkripsiController::class, 'previewSkPembimbing'])->name('preview');
         Route::get('/download/{skripsi}', [DosenSkripsiController::class, 'downloadSkPembimbing'])->name('download');
     });
     
-    // Routes untuk file proposal
-    Route::prefix('dosen/proposal')->name('dosen.proposal.')->group(function () {
-        Route::get('/', [DosenSkripsiController::class, 'proposalIndex'])->name('index');
-        Route::get('/preview/{skripsi}', [DosenSkripsiController::class, 'previewProposal'])->name('preview');
-        Route::get('/download/{skripsi}', [DosenSkripsiController::class, 'downloadProposal'])->name('download');
+    // SK Proposal
+    Route::prefix('sk-proposal')->name('sk-proposal.')->group(function () {
+        Route::get('/', [DosenSkripsiController::class, 'skProposalIndex'])->name('index');
+        Route::get('/preview/{skripsi}', [DosenSkripsiController::class, 'previewSkProposal'])->name('preview');
+        Route::get('/download/{skripsi}', [DosenSkripsiController::class, 'downloadSkProposal'])->name('download');
+    });
+    
+    // SK Ujian Hasil
+    Route::prefix('sk-ujian-hasil')->name('sk-ujian-hasil.')->group(function () {
+        Route::get('/', [DosenSkripsiController::class, 'skUjianHasilIndex'])->name('index');
+        Route::get('/preview/{skripsi}', [DosenSkripsiController::class, 'previewSkUjianHasil'])->name('preview');
+        Route::get('/download/{skripsi}', [DosenSkripsiController::class, 'downloadSkUjianHasil'])->name('download');
+    });
+    
+    // File Skripsi
+    Route::prefix('skripsi')->name('skripsi.')->group(function () {
+        Route::get('/', [DosenSkripsiController::class, 'skripsiIndex'])->name('index');
+        Route::get('/preview/{skripsi}', [DosenSkripsiController::class, 'previewSkripsi'])->name('preview');
+        Route::get('/download/{skripsi}', [DosenSkripsiController::class, 'downloadSkripsi'])->name('download');
     });
 });

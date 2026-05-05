@@ -9,13 +9,14 @@ use App\Models\Skripsi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class DosenSkripsiController extends Controller
 {
     /**
-     * Mendapatkan data dosen yang sedang login
+     * Mendapatkan data dosen yang sedang login dari model Dosen
      */
-    private function authDosen()
+    private function getAuthDosen()
     {
         $user = Auth::user();
         
@@ -23,10 +24,16 @@ class DosenSkripsiController extends Controller
             abort(403, 'Anda tidak memiliki akses.');
         }
         
+        // Cari dosen berdasarkan email atau nama
         $dosen = Dosen::where('email', $user->email)->first();
         
         if (!$dosen) {
-            abort(404, 'Data dosen tidak ditemukan.');
+            // Coba cari berdasarkan nama
+            $dosen = Dosen::where('nama', $user->name)->first();
+        }
+        
+        if (!$dosen) {
+            abort(404, 'Data dosen tidak ditemukan. Silakan hubungi admin.');
         }
         
         return $dosen;
@@ -37,9 +44,8 @@ class DosenSkripsiController extends Controller
      */
     public function skripsiIndex()
     {
-        $dosen = $this->authDosen();
+        $dosen = $this->getAuthDosen();
         
-        // Load semua skripsi bimbingan
         $dosen->load([
             'skripsiSebagaiPembimbing1' => function($q) {
                 $q->whereNotNull('file_skripsi');
@@ -53,7 +59,9 @@ class DosenSkripsiController extends Controller
         
         $stats = [
             'total_mahasiswa' => $skripsiList->count(),
-            'total_skripsi' => $skripsiList->count(),
+            'total_file' => $skripsiList->count(),
+            'as_pembimbing_1' => $dosen->skripsiSebagaiPembimbing1->count(),
+            'as_pembimbing_2' => $dosen->skripsiSebagaiPembimbing2->count(),
         ];
         
         return view('dosen.skripsi.index', compact('dosen', 'skripsiList', 'stats'));
@@ -64,43 +72,87 @@ class DosenSkripsiController extends Controller
      */
     public function skPembimbingIndex()
     {
-        $dosen = $this->authDosen();
+        $dosen = $this->getAuthDosen();
         
         $dosen->load([
-            'skPembimbingSebagaiPembimbing1',
-            'skPembimbingSebagaiPembimbing2'
+            'skripsiSebagaiPembimbing1' => function($q) {
+                $q->whereNotNull('file_sk_pembimbing');
+            },
+            'skripsiSebagaiPembimbing2' => function($q) {
+                $q->whereNotNull('file_sk_pembimbing');
+            }
         ]);
         
-        $skripsiList = $dosen->skPembimbingSebagaiPembimbing1->merge($dosen->skPembimbingSebagaiPembimbing2);
+        $skripsiList = $dosen->skripsiSebagaiPembimbing1->merge($dosen->skripsiSebagaiPembimbing2);
         
         $stats = [
             'total_mahasiswa' => $skripsiList->count(),
-            'total_sk' => $skripsiList->count(),
+            'total_file' => $skripsiList->count(),
+            'as_pembimbing_1' => $dosen->skripsiSebagaiPembimbing1->count(),
+            'as_pembimbing_2' => $dosen->skripsiSebagaiPembimbing2->count(),
         ];
         
         return view('dosen.sk-pembimbing.index', compact('dosen', 'skripsiList', 'stats'));
     }
 
     /**
-     * Menampilkan semua file proposal bimbingan dosen
+     * Menampilkan semua file SK Proposal bimbingan dosen
      */
-    public function proposalIndex()
+    public function skProposalIndex()
     {
-        $dosen = $this->authDosen();
+        $dosen = $this->getAuthDosen();
         
         $dosen->load([
-            'proposalSebagaiPembimbing1',
-            'proposalSebagaiPembimbing2'
+            'skripsiSebagaiPembimbing1' => function($q) {
+                $q->whereNotNull('file_proposal')
+                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+            },
+            'skripsiSebagaiPembimbing2' => function($q) {
+                $q->whereNotNull('file_proposal')
+                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+            }
         ]);
         
-        $skripsiList = $dosen->proposalSebagaiPembimbing1->merge($dosen->proposalSebagaiPembimbing2);
+        $skripsiList = $dosen->skripsiSebagaiPembimbing1->merge($dosen->skripsiSebagaiPembimbing2);
         
         $stats = [
             'total_mahasiswa' => $skripsiList->count(),
-            'total_proposal' => $skripsiList->count(),
+            'total_file' => $skripsiList->count(),
+            'as_pembimbing_1' => $dosen->skripsiSebagaiPembimbing1->count(),
+            'as_pembimbing_2' => $dosen->skripsiSebagaiPembimbing2->count(),
         ];
         
-        return view('dosen.proposal.index', compact('dosen', 'skripsiList', 'stats'));
+        return view('dosen.sk-proposal.index', compact('dosen', 'skripsiList', 'stats'));
+    }
+
+    /**
+     * Menampilkan semua file SK Ujian Hasil bimbingan dosen
+     */
+    public function skUjianHasilIndex()
+    {
+        $dosen = $this->getAuthDosen();
+        
+        $dosen->load([
+            'skripsiSebagaiPembimbing1' => function($q) {
+                $q->whereNotNull('file_skripsi')
+                  ->where('raw_nama_pembimbing1', 'not like', 'SK_%');
+            },
+            'skripsiSebagaiPembimbing2' => function($q) {
+                $q->whereNotNull('file_skripsi')
+                  ->where('raw_nama_pembimbing1', 'not like', 'SK_%');
+            }
+        ]);
+        
+        $skripsiList = $dosen->skripsiSebagaiPembimbing1->merge($dosen->skripsiSebagaiPembimbing2);
+        
+        $stats = [
+            'total_mahasiswa' => $skripsiList->count(),
+            'total_file' => $skripsiList->count(),
+            'as_pembimbing_1' => $dosen->skripsiSebagaiPembimbing1->count(),
+            'as_pembimbing_2' => $dosen->skripsiSebagaiPembimbing2->count(),
+        ];
+        
+        return view('dosen.sk-ujian-hasil.index', compact('dosen', 'skripsiList', 'stats'));
     }
 
     /**
@@ -108,9 +160,8 @@ class DosenSkripsiController extends Controller
      */
     public function previewSkripsi(Skripsi $skripsi)
     {
-        $dosen = $this->authDosen();
+        $dosen = $this->getAuthDosen();
         
-        // Validasi bahwa dosen ini adalah pembimbing dari skripsi tersebut
         if ($skripsi->dosen_pembimbing1_id != $dosen->id && $skripsi->dosen_pembimbing2_id != $dosen->id) {
             abort(403, 'Anda tidak memiliki akses ke file ini.');
         }
@@ -139,7 +190,7 @@ class DosenSkripsiController extends Controller
      */
     public function previewSkPembimbing(Skripsi $skripsi)
     {
-        $dosen = $this->authDosen();
+        $dosen = $this->getAuthDosen();
         
         if ($skripsi->dosen_pembimbing1_id != $dosen->id && $skripsi->dosen_pembimbing2_id != $dosen->id) {
             abort(403, 'Anda tidak memiliki akses ke file ini.');
@@ -165,11 +216,11 @@ class DosenSkripsiController extends Controller
     }
 
     /**
-     * Preview file proposal
+     * Preview file SK Proposal
      */
-    public function previewProposal(Skripsi $skripsi)
+    public function previewSkProposal(Skripsi $skripsi)
     {
-        $dosen = $this->authDosen();
+        $dosen = $this->getAuthDosen();
         
         if ($skripsi->dosen_pembimbing1_id != $dosen->id && $skripsi->dosen_pembimbing2_id != $dosen->id) {
             abort(403, 'Anda tidak memiliki akses ke file ini.');
@@ -195,11 +246,41 @@ class DosenSkripsiController extends Controller
     }
 
     /**
+     * Preview file SK Ujian Hasil
+     */
+    public function previewSkUjianHasil(Skripsi $skripsi)
+    {
+        $dosen = $this->getAuthDosen();
+        
+        if ($skripsi->dosen_pembimbing1_id != $dosen->id && $skripsi->dosen_pembimbing2_id != $dosen->id) {
+            abort(403, 'Anda tidak memiliki akses ke file ini.');
+        }
+        
+        if (!$skripsi->file_skripsi) {
+            abort(404);
+        }
+        
+        if (Storage::disk('local')->exists($skripsi->file_skripsi)) {
+            $file = Storage::disk('local')->get($skripsi->file_skripsi);
+            $mimeType = Storage::disk('local')->mimeType($skripsi->file_skripsi);
+        } elseif (Storage::disk('public')->exists($skripsi->file_skripsi)) {
+            $file = Storage::disk('public')->get($skripsi->file_skripsi);
+            $mimeType = Storage::disk('public')->mimeType($skripsi->file_skripsi);
+        } else {
+            abort(404);
+        }
+        
+        return response($file, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Content-Disposition', 'inline');
+    }
+
+    /**
      * Download file skripsi
      */
     public function downloadSkripsi(Skripsi $skripsi)
     {
-        $dosen = $this->authDosen();
+        $dosen = $this->getAuthDosen();
         
         if ($skripsi->dosen_pembimbing1_id != $dosen->id && $skripsi->dosen_pembimbing2_id != $dosen->id) {
             abort(403, 'Anda tidak memiliki akses ke file ini.');
@@ -227,7 +308,7 @@ class DosenSkripsiController extends Controller
      */
     public function downloadSkPembimbing(Skripsi $skripsi)
     {
-        $dosen = $this->authDosen();
+        $dosen = $this->getAuthDosen();
         
         if ($skripsi->dosen_pembimbing1_id != $dosen->id && $skripsi->dosen_pembimbing2_id != $dosen->id) {
             abort(403, 'Anda tidak memiliki akses ke file ini.');
@@ -251,11 +332,11 @@ class DosenSkripsiController extends Controller
     }
 
     /**
-     * Download file proposal
+     * Download file SK Proposal
      */
-    public function downloadProposal(Skripsi $skripsi)
+    public function downloadSkProposal(Skripsi $skripsi)
     {
-        $dosen = $this->authDosen();
+        $dosen = $this->getAuthDosen();
         
         if ($skripsi->dosen_pembimbing1_id != $dosen->id && $skripsi->dosen_pembimbing2_id != $dosen->id) {
             abort(403, 'Anda tidak memiliki akses ke file ini.');
@@ -273,8 +354,36 @@ class DosenSkripsiController extends Controller
             abort(404);
         }
         
-        $fileName = "Proposal_{$skripsi->nama_mahasiswa}_{$skripsi->nim}.pdf";
+        $fileName = "SK_Proposal_{$skripsi->nama_mahasiswa}_{$skripsi->nim}.pdf";
         
         return Storage::disk($disk)->download($skripsi->file_proposal, $fileName);
+    }
+
+    /**
+     * Download file SK Ujian Hasil
+     */
+    public function downloadSkUjianHasil(Skripsi $skripsi)
+    {
+        $dosen = $this->getAuthDosen();
+        
+        if ($skripsi->dosen_pembimbing1_id != $dosen->id && $skripsi->dosen_pembimbing2_id != $dosen->id) {
+            abort(403, 'Anda tidak memiliki akses ke file ini.');
+        }
+        
+        if (!$skripsi->file_skripsi) {
+            abort(404);
+        }
+        
+        if (Storage::disk('local')->exists($skripsi->file_skripsi)) {
+            $disk = 'local';
+        } elseif (Storage::disk('public')->exists($skripsi->file_skripsi)) {
+            $disk = 'public';
+        } else {
+            abort(404);
+        }
+        
+        $fileName = "SK_UjianHasil_{$skripsi->nama_mahasiswa}_{$skripsi->nim}.pdf";
+        
+        return Storage::disk($disk)->download($skripsi->file_skripsi, $fileName);
     }
 }

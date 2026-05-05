@@ -12,24 +12,6 @@ class SkripsiApiController extends Controller
 {
     public function __construct(private SkripsiSyncService $syncService) {}
 
-    /**
-     * POST /api/sync/skripsi
-     *
-     * Header: X-Sync-Token: {token}
-     * Body (JSON):
-     * {
-     *   "source": "presma",
-     *   "pendaftaran_id": "123",
-     *   "mahasiswa": { "nama": "...", "nim": "...", "angkatan": "..." },
-     *   "judul_skripsi": "...",
-     *   "dosen_list": [...],
-     *   "files": {
-     *     "skripsi": "base64...",
-     *     "sk_pembimbing": "base64...",
-     *     "proposal": "base64..."
-     *   }
-     * }
-     */
     public function sync(Request $request)
 {
     // Auth via token header
@@ -52,13 +34,11 @@ class SkripsiApiController extends Controller
         'dosen_list.*.nip'        => 'nullable|string',
         'dosen_list.*.role'       => 'required|in:pembimbing_1,pembimbing_2',
         'files'                   => 'nullable|array',
-        // Hapus validasi tipe spesifik, biarkan fleksibel
-        'files.skripsi'           => 'nullable', // bisa string atau array
+        'files.skripsi'           => 'nullable',
         'files.sk_pembimbing'     => 'nullable',
         'files.proposal'          => 'nullable',
     ]);
 
-    // Proses file dengan format yang diterima
     if (!empty($validated['files'])) {
         foreach ($validated['files'] as $fileKey => $fileValue) {
             if (is_array($fileValue) && isset($fileValue['content'])) {
