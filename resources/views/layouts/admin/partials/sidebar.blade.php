@@ -58,6 +58,20 @@
             @endif
         </a>
 
+        {{-- File SK Ujian Hasil --}}
+        <a href="{{ route('admin.file.sk-ujian-hasil.index') }}" class="nav-link flex items-center py-3 pl-12 pr-6 transition-all duration-300 {{ request()->routeIs('admin.file.sk-ujian-hasil.*') ? 'active' : '' }}">
+            <i class="fas fa-file-pdf text-red-400 mr-3 w-5"></i>
+            <span>SK Ujian Hasil</span>
+            @php
+                $fileSkUjianHasilCount = \App\Models\Skripsi::whereNotNull('file_skripsi')
+                    ->where('raw_nama_pembimbing1', 'like', 'SK_%')
+                    ->count();
+            @endphp
+            @if($fileSkUjianHasilCount > 0)
+                <span class="ml-auto bg-red-600 text-xs px-2 py-0.5 rounded-full">{{ $fileSkUjianHasilCount }}</span>
+            @endif
+        </a>
+
         {{-- File SK Pembimbing --}}
         <a href="{{ route('admin.file.sk-pembimbing.index') }}" class="nav-link flex items-center py-3 pl-12 pr-6 transition-all duration-300 {{ request()->routeIs('admin.file.sk-pembimbing.*') ? 'active' : '' }}">
             <i class="fas fa-file-alt text-blue-400 mr-3 w-5"></i>

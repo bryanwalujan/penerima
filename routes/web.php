@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\SkripsiController;
 use App\Http\Controllers\Admin\FileSkripsiController;
 use App\Http\Controllers\Admin\FileSkPembimbingController;
+use App\Http\Controllers\Admin\FileSkUjianHasilController;
 use App\Http\Controllers\Admin\FileSkProposalController;
 use App\Http\Controllers\Dosen\DosenSkripsiController;
 use App\Http\Controllers\Admin\AdminPasswordController;
@@ -96,6 +97,14 @@ Route::prefix('admin')->group(function () {
         Route::get('/dosen/{dosen}', [FileSkProposalController::class, 'show'])->name('dosen');
         Route::get('/preview/{skripsi}', [FileSkProposalController::class, 'preview'])->name('preview');
         Route::get('/download/{skripsi}', [FileSkProposalController::class, 'download'])->name('download');
+    });
+
+    // SK Ujian Hasil
+    Route::prefix('file/sk-ujian-hasil')->name('admin.file.sk-ujian-hasil.')->group(function () {
+        Route::get('/', [FileSkUjianHasilController::class, 'index'])->name('index');
+        Route::get('/dosen/{dosen}', [FileSkUjianHasilController::class, 'show'])->name('dosen');
+        Route::get('/preview/{skripsi}', [FileSkUjianHasilController::class, 'preview'])->name('preview');
+        Route::get('/download/{skripsi}', [FileSkUjianHasilController::class, 'download'])->name('download');
     });
 
     Route::get('/password/edit',   [AdminPasswordController::class, 'edit'])  ->name('admin.password.edit');
