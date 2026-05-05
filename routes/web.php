@@ -83,7 +83,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/download/{skripsi}', [FileSkripsiController::class, 'download'])->name('download');
     });
     
-    // File SK Pembimbing Routes
+    // SK Pembimbing
     Route::prefix('file/sk-pembimbing')->name('admin.file.sk-pembimbing.')->group(function () {
         Route::get('/', [FileSkPembimbingController::class, 'index'])->name('index');
         Route::get('/dosen/{dosen}', [FileSkPembimbingController::class, 'show'])->name('dosen');

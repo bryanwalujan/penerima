@@ -81,6 +81,13 @@ class SkripsiSyncService
                 $skripsi->save();
             }
         }
+        elseif ($type === 'sk_pembimbing') {
+            $updateData['file_sk_pembimbing'] = $savedFiles['sk_pembimbing'] ?? null;
+            if ($nomorSuratSkPembimbing = $payload['nomor_surat'] ?? null) {
+                $skripsi->raw_nama_pembimbing1 = $nomorSuratSkPembimbing . ' | ' . ($skripsi->raw_nama_pembimbing1 ?? '');
+                $skripsi->save();
+            }
+        }
         else {
             $updateData = array_filter([
                 'file_skripsi'       => $savedFiles['skripsi']       ?? null,
@@ -136,7 +143,6 @@ class SkripsiSyncService
                 ],
             ];
         } 
-        // ✅ TAMBAHKAN INI
         elseif ($type === 'sk_ujian_hasil') {
             $map = [
                 'skripsi' => [
@@ -144,6 +150,16 @@ class SkripsiSyncService
                     'filename' => 'Skripsi.pdf',
                     'label' => 'SK Ujian Hasil',
                     'db_field' => 'file_skripsi'
+                ],
+            ];
+        }
+        elseif ($type === 'sk_pembimbing') {
+            $map = [
+                'sk_pembimbing' => [
+                    'folder' => 'sk_pembimbing',
+                    'filename' => 'SK_Pembimbing.pdf',
+                    'label' => 'SK Pembimbing',
+                    'db_field' => 'file_sk_pembimbing'
                 ],
             ];
         }
