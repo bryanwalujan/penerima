@@ -23,8 +23,9 @@ class SkripsiSyncService
         $source      = $payload['source']         ?? 'presma';
         $pendaftaranId = (string) ($payload['pendaftaran_id'] ?? '');
         $folderNameFromPayload = $payload['folder_name'] ?? null;
-        $type = $payload['type'] ?? 'skripsi'; // tambahan: tipe data (skripsi, seminar_proposal, sk_proposal)
-        $nomorSkProposal = $payload['nomor_sk_proposal'] ?? null; // tambahan: nomor SK Proposal
+        $type = $payload['type'] ?? 'skripsi';
+        $nomorSkProposal = $payload['nomor_sk_proposal'] ?? null;
+        $nomorSkUjianHasil = $payload['nomor_sk_ujian_hasil'] ?? null; // ✅ TAMBAHKAN
 
         // --- 1. Resolve dosen ---
         $resolved = $this->resolveDosenList($dosenList);
@@ -66,18 +67,21 @@ class SkripsiSyncService
         $updateData = [];
         
         if ($type === 'sk_proposal') {
-            // Untuk SK Proposal, simpan ke field file_proposal (override)
-            // Atau bisa juga buat field baru di migration jika perlu
             $updateData['file_proposal'] = $savedFiles['sk_proposal'] ?? null;
-            
-            // Simpan juga nomor SK Proposal ke field raw_nama_pembimbing1 atau buat field baru
-            // Untuk sementara simpan di raw_nama_pembimbing1 sebagai metadata
             if ($nomorSkProposal) {
                 $skripsi->raw_nama_pembimbing1 = $nomorSkProposal . ' | ' . ($skripsi->raw_nama_pembimbing1 ?? '');
                 $skripsi->save();
             }
-        } else {
-            // Untuk tipe skripsi biasa
+        } 
+        // ✅ TAMBAHKAN INI
+        elseif ($type === 'sk_ujian_hasil') {
+            $updateData['file_skripsi'] = $savedFiles['skripsi'] ?? null;
+            if ($nomorSkUjianHasil) {
+                $skripsi->raw_nama_pembimbing1 = $nomorSkUjianHasil . ' | ' . ($skripsi->raw_nama_pembimbing1 ?? '');
+                $skripsi->save();
+            }
+        }
+        else {
             $updateData = array_filter([
                 'file_skripsi'       => $savedFiles['skripsi']       ?? null,
                 'file_sk_pembimbing' => $savedFiles['sk_pembimbing'] ?? null,
@@ -114,35 +118,36 @@ class SkripsiSyncService
 
     /**
      * Simpan file ke folder yang terpisah
-     * 
-     * Mendukung 2 format payload:
-     * 1. Format lama: files['skripsi'] = "base64string..."
-     * 2. Format baru: files['skripsi'] = [
-     *      'content' => 'base64...',
-     *      'folder' => 'skripsi',
-     *      'filename' => 'Skripsi.pdf'
-     *    ]
      */
     private function saveFilesToSeparateFolders(Skripsi $skripsi, array $filesBase64, string $type = 'skripsi'): array
     {
         $saved = [];
         $slug = Str::slug($skripsi->folder_name);
         
-        // Mapping file berdasarkan tipe
         $map = [];
         
         if ($type === 'sk_proposal') {
-            // Mapping untuk SK Proposal - simpan ke folder proposal
             $map = [
                 'sk_proposal' => [
-                    'folder' => 'proposal',  // simpan di folder proposal
+                    'folder' => 'proposal',
                     'filename' => 'SK_Proposal.pdf',
                     'label' => 'SK Proposal',
                     'db_field' => 'file_proposal'
                 ],
             ];
-        } else {
-            // Mapping untuk skripsi biasa
+        } 
+        // ✅ TAMBAHKAN INI
+        elseif ($type === 'sk_ujian_hasil') {
+            $map = [
+                'skripsi' => [
+                    'folder' => 'skripsi',
+                    'filename' => 'Skripsi.pdf',
+                    'label' => 'SK Ujian Hasil',
+                    'db_field' => 'file_skripsi'
+                ],
+            ];
+        }
+        else {
             $map = [
                 'skripsi' => [
                     'folder' => 'skripsi',
@@ -173,7 +178,6 @@ class SkripsiSyncService
                 continue;
             }
 
-            // Handle multiple formats
             $base64 = null;
             
             if (is_string($fileData)) {
@@ -202,7 +206,6 @@ class SkripsiSyncService
                     continue;
                 }
 
-                // Buat direktori jika belum ada
                 $fullFolderPath = storage_path("app/private/{$config['folder']}/{$slug}");
                 if (!file_exists($fullFolderPath)) {
                     mkdir($fullFolderPath, 0755, true);
