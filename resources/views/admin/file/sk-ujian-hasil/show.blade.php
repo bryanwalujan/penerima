@@ -72,7 +72,6 @@
                     <th class="py-3 px-4 text-left rounded-tl-lg">No</th>
                     <th class="py-3 px-4 text-left">Nama Mahasiswa</th>
                     <th class="py-3 px-4 text-left">NIM</th>
-                    <th class="py-3 px-4 text-left">Nomor SK</th>
                     <th class="py-3 px-4 text-left">Judul Skripsi</th>
                     <th class="py-3 px-4 text-left">Peran</th>
                     <th class="py-3 px-4 text-center rounded-tr-lg">Aksi</th>
@@ -85,15 +84,11 @@
                         $role = '';
                         if($dosen->id == $skripsi->dosen_pembimbing1_id) $role = 'Pembimbing 1';
                         if($dosen->id == $skripsi->dosen_pembimbing2_id) $role = 'Pembimbing 2';
-                        $nomorSk = explode(' | ', $skripsi->raw_nama_pembimbing1 ?? '')[0];
                     @endphp
                     <tr class="border-b hover:bg-gray-50">
                         <td class="py-3 px-4">{{ $no++ }}</td>
                         <td class="py-3 px-4 font-medium">{{ $skripsi->nama_mahasiswa }}</td>
                         <td class="py-3 px-4"><code>{{ $skripsi->nim ?: '-' }}</code></td>
-                        <td class="py-3 px-4">
-                            <span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{{ $nomorSk ?: '-' }}</span>
-                        </td>
                         <td class="py-3 px-4">
                             <div class="max-w-xs truncate" title="{{ $skripsi->judul_skripsi }}">
                                 {{ Str::limit($skripsi->judul_skripsi, 50) }}
@@ -105,16 +100,10 @@
                             </span>
                         </td>
                         <td class="py-3 px-4 text-center">
-                            <div class="flex justify-center space-x-3">
-                                <button onclick="previewFile('{{ route('admin.file.sk-ujian-hasil.preview', $skripsi) }}', '{{ $skripsi->nama_mahasiswa }}')" 
-                                        class="text-red-600 hover:text-red-800" title="Preview">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <a href="{{ route('admin.file.sk-ujian-hasil.download', $skripsi) }}" 
-                                   class="text-green-600 hover:text-green-800" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                            </div>
+                            <a href="{{ route('admin.file.sk-ujian-hasil.download', $skripsi) }}" 
+                               class="text-green-600 hover:text-green-800" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
                         </td>
                     </tr>
                 @endforeach
@@ -129,52 +118,4 @@
         @endif
     </div>
 </div>
-
-{{-- Modal Preview PDF --}}
-<div id="pdfModal" class="modal hidden fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50">
-    <div class="relative w-full max-w-6xl mx-auto mt-10 mb-10">
-        <div class="bg-white rounded-lg shadow-lg">
-            <div class="flex justify-between items-center p-4 border-b">
-                <h3 class="text-lg font-semibold" id="modalTitle">
-                    <i class="fas fa-file-pdf text-red-600 mr-2"></i>Preview SK Ujian Hasil
-                </h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            <div class="p-4">
-                <iframe id="pdfIframe" src="" style="width: 100%; height: 70vh; border: none;"></iframe>
-            </div>
-            <div class="flex justify-end p-4 border-t">
-                <button onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 mr-2">
-                    Tutup
-                </button>
-                <a href="#" id="downloadLink" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                    <i class="fas fa-download mr-1"></i> Download
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function previewFile(previewUrl, namaMahasiswa) {
-        document.getElementById('pdfIframe').src = previewUrl;
-        document.getElementById('downloadLink').href = previewUrl.replace('/preview/', '/download/');
-        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-file-pdf text-red-600 mr-2"></i>Preview SK Ujian Hasil - ' + namaMahasiswa;
-        document.getElementById('pdfModal').classList.remove('hidden');
-    }
-    
-    function closeModal() {
-        document.getElementById('pdfModal').classList.add('hidden');
-        document.getElementById('pdfIframe').src = '';
-    }
-    
-    window.onclick = function(event) {
-        let modal = document.getElementById('pdfModal');
-        if (event.target == modal) {
-            closeModal();
-        }
-    }
-</script>
 @endsection

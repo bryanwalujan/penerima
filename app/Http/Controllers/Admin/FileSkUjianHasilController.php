@@ -14,23 +14,24 @@ class FileSkUjianHasilController extends Controller
 {
     public function index(Request $request)
     {
-        // Ambil dosen yang memiliki SK Ujian Hasil (file_skripsi terisi dan memiliki metadata)
+        // Ambil dosen yang memiliki SK Ujian Hasil (file_skripsi terisi)
+        // SK Ujian Hasil ditandai dengan adanya file_skripsi dan raw_nama_pembimbing1 mengandung angka/bukan SK_ dari proposal
         $dosens = Dosen::whereHas('skripsiSebagaiPembimbing1', function($q) {
                 $q->whereNotNull('file_skripsi')
-                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                  ->where('file_skripsi', 'like', 'skripsi/%');  // File skripsi ada di folder skripsi
             })
             ->orWhereHas('skripsiSebagaiPembimbing2', function($q) {
                 $q->whereNotNull('file_skripsi')
-                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                  ->where('file_skripsi', 'like', 'skripsi/%');
             })
             ->with([
                 'skripsiSebagaiPembimbing1' => function($q) {
                     $q->whereNotNull('file_skripsi')
-                      ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                      ->where('file_skripsi', 'like', 'skripsi/%');
                 },
                 'skripsiSebagaiPembimbing2' => function($q) {
                     $q->whereNotNull('file_skripsi')
-                      ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                      ->where('file_skripsi', 'like', 'skripsi/%');
                 }
             ])
             ->get();
@@ -38,11 +39,11 @@ class FileSkUjianHasilController extends Controller
         $stats = [
             'total_dosen' => $dosens->count(),
             'total_sk_ujian_hasil' => Skripsi::whereNotNull('file_skripsi')
-                ->where('raw_nama_pembimbing1', 'like', 'SK_%')
+                ->where('file_skripsi', 'like', 'skripsi/%')
                 ->count(),
             'from_presma' => Skripsi::whereNotNull('file_skripsi')
                 ->where('source', 'presma')
-                ->where('raw_nama_pembimbing1', 'like', 'SK_%')
+                ->where('file_skripsi', 'like', 'skripsi/%')
                 ->count(),
         ];
 
@@ -54,11 +55,11 @@ class FileSkUjianHasilController extends Controller
         $dosen->load([
             'skripsiSebagaiPembimbing1' => function($q) {
                 $q->whereNotNull('file_skripsi')
-                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                  ->where('file_skripsi', 'like', 'skripsi/%');
             },
             'skripsiSebagaiPembimbing2' => function($q) {
                 $q->whereNotNull('file_skripsi')
-                  ->where('raw_nama_pembimbing1', 'like', 'SK_%');
+                  ->where('file_skripsi', 'like', 'skripsi/%');
             }
         ]);
 
@@ -102,9 +103,7 @@ class FileSkUjianHasilController extends Controller
             abort(404, 'File tidak ditemukan di storage');
         }
 
-        $nomorSk = explode(' | ', $skripsi->raw_nama_pembimbing1 ?? '')[0];
         $fileName = "SK_UjianHasil_{$skripsi->nama_mahasiswa}_{$skripsi->nim}.pdf";
-        
         return Storage::disk($disk)->download($skripsi->file_skripsi, $fileName);
     }
 }
